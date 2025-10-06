@@ -3,694 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Inventory - Smart Priority System</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            font-weight: 300;
-        }
-        
-        .header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-        
-        .user-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(255,255,255,0.1);
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 0.9em;
-        }
-        
-        .user-role {
-            background: #48bb78;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .user-role.admin { background: #e53e3e; }
-        .user-role.manager { background: #ed8936; }
-        
-        .logout-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        .online-status {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.1);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #48bb78;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        /* ===========================================
-           ALERTS DASHBOARD - Panel principal de alertas
-        =========================================== */
-        .alerts-dashboard {
-            background: linear-gradient(135deg, #ff7b7b, #ff5757);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 20px rgba(255, 87, 87, 0.3);
-        }
-        
-        .alerts-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .alerts-header h2 {
-            margin: 0;
-            font-size: 1.8em;
-        }
-        
-        .alert-summary {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .alert-counter {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-        }
-        
-        .alert-counter.urgent {
-            background: rgba(255,255,255,0.3);
-            animation: blink 2s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.7; }
-        }
-        
-        .alerts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .alert-card {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 12px;
-            border-left: 5px solid;
-            transition: all 0.3s ease;
-        }
-        
-        .alert-card:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        
-        .alert-card.urgent {
-            border-left-color: #ffffff;
-            background: rgba(255,255,255,0.25);
-        }
-        
-        .alert-card.normal {
-            border-left-color: #ffd93d;
-            background: rgba(255,217,61,0.15);
-        }
-        
-        .alert-card.info {
-            border-left-color: #74c0fc;
-            background: rgba(116,192,252,0.15);
-        }
-        
-        .alert-card h4 {
-            margin: 0 0 8px 0;
-            font-size: 1.1em;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .alert-card p {
-            margin: 5px 0;
-            opacity: 0.9;
-            font-size: 0.9em;
-        }
-        
-        .priority-badge {
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.7em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .priority-badge.high {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-        
-        .priority-badge.medium {
-            background: #ffd93d;
-            color: #8b5a00;
-        }
-        
-        .priority-badge.low {
-            background: #74c0fc;
-            color: #1a5490;
-        }
-        
-        .alert-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-        }
-        
-        .alert-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-        
-        .alert-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        /* ===========================================
-           PRIORITY MANAGEMENT - Gestión de prioridades
-        =========================================== */
-        .priority-panel {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 2px solid #e9ecef;
-        }
-        
-        .priority-panel h3 {
-            margin: 0 0 20px 0;
-            color: #2c3e50;
-            font-size: 1.5em;
-        }
-        
-        .priority-controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .priority-filter {
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            background: white;
-        }
-        
-        .priority-filter:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-        
-        .btn {
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #48bb78, #38a169);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(45deg, #ed8936, #dd6b20);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn:disabled {
-            background: #ccc !important;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        /* ===========================================
-           INVENTORY TABLE - Tabla mejorada con prioridades
-        =========================================== */
-        .search-filter {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .search-filter input, .search-filter select {
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .search-filter input:focus, .search-filter select:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        th {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        tr:hover {
-            background: rgba(102, 126, 234, 0.05);
-        }
-        
-        .stock-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        
-        .status-indicator.urgent {
-            background: #e53e3e;
-            animation: pulse-urgent 1.5s infinite;
-        }
-        
-        .status-indicator.normal {
-            background: #ed8936;
-        }
-        
-        .status-indicator.good {
-            background: #48bb78;
-        }
-        
-        .status-indicator.optimal {
-            background: #38a169;
-        }
-        
-        @keyframes pulse-urgent {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        
-        .priority-controls-row {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .priority-selector {
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 0.8em;
-            width: 80px;
-        }
-        
-        .threshold-input {
-            width: 50px;
-            padding: 4px 6px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 0.8em;
-            text-align: center;
-        }
-        
-        .save-btn {
-            background: #48bb78;
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
-        
-        .save-btn:hover {
-            background: #38a169;
-        }
-        
-        /* ===========================================
-           MODALS - Ventanas emergentes
-        =========================================== */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal.show {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-        }
-        
-        .modal h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        
-        .form-group input:focus, .form-group select:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        
-        .btn-cancel {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            z-index: 1000;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification.success { background: #48bb78; }
-        .notification.error { background: #f56565; }
-        .notification.warning { background: #ed8936; }
-        .notification.info { background: #4299e1; }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2em;
-            color: #667eea;
-        }
-        
-        /* ===========================================
-           LOGIN SCREEN
-        =========================================== */
-        .login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-        
-        .login-box h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 2em;
-        }
-        
-        .login-box p {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        
-        .login-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-        
-        .login-input:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
-        }
-        
-        .login-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .login-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .login-error {
-            color: #e74c3c;
-            margin-top: 15px;
-            font-weight: bold;
-        }
-        
-        .app-content {
-            display: none;
-        }
-        
-        .app-content.authenticated {
-            display: block;
-        }
-        
-        @media (max-width: 768px) {
-            .alerts-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .alert-summary {
-                width: 100%;
-                justify-content: space-around;
-            }
-            
-            .priority-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-filter {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            table {
-                font-size: 0.8em;
-            }
-            
-            th, td {
-                padding: 8px 6px;
-            }
-            
-            .user-info {
-                position: static;
-                margin-top: 15px;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-        }
-    </style>
+    <title>Restaurant Inventory - POS Integration System</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" class="login-screen">
         <div class="login-box">
-            <h1>🍸 Bar Inventory</h1>
-            <p>Smart Priority & Alerts System</p>
+            <h1>🍽️ Restaurant Inventory</h1>
+            <p>POS Integration & Smart Alerts System</p>
             <input type="email" id="loginEmail" class="login-input" placeholder="Email" autofocus>
             <input type="password" id="loginPassword" class="login-input" placeholder="Password">
             <button class="login-btn" id="loginBtn" onclick="attemptLogin()">Sign In</button>
@@ -701,6 +22,7 @@
     <!-- MAIN APP CONTENT -->
     <div id="appContent" class="app-content">
         <div class="container">
+            <!-- HEADER -->
             <div class="header">
                 <div class="online-status">
                     <div class="status-dot"></div>
@@ -713,40 +35,65 @@
                     <button class="logout-btn" onclick="logout()">Sign Out</button>
                 </div>
                 
-                <h1>🍸 Bar Inventory Management</h1>
-                <p>Smart Priority & Alerts System</p>
+                <h1>🍽️ Restaurant Inventory Management</h1>
+                <p>POS Integration & Smart Priority System</p>
             </div>
             
             <div class="content">
+                <!-- POS INTEGRATION STATUS (NEW FEATURE) -->
+                <div class="pos-integration-panel" id="posIntegrationPanel">
+                    <div class="pos-header">
+                        <h2>🔌 POS Integration Status</h2>
+                        <button class="btn btn-primary" onclick="configurePOS()">Configure POS</button>
+                    </div>
+                    <div class="pos-stats">
+                        <div class="pos-stat-card">
+                            <h3>Toast POS</h3>
+                            <p class="status-badge" id="toastStatus">Not Connected</p>
+                            <p class="last-sync">Last Sync: <span id="lastSync">Never</span></p>
+                        </div>
+                        <div class="pos-stat-card">
+                            <h3>Items Mapped</h3>
+                            <p class="stat-number" id="mappedItems">0</p>
+                            <button class="btn-small" onclick="openItemMapping()">Map Items</button>
+                        </div>
+                        <div class="pos-stat-card">
+                            <h3>Auto-Updates</h3>
+                            <p class="stat-number" id="autoUpdates">0</p>
+                            <p class="stat-label">Today</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ALERTS DASHBOARD -->
                 <div class="alerts-dashboard" id="alertsDashboard">
                     <div class="alerts-header">
                         <h2>🚨 Stock Alerts</h2>
                         <div class="alert-summary">
-                            <div class="alert-counter urgent" id="urgentCount">
+                            <div class="alert-counter urgent">
                                 <span id="urgentNumber">0</span> Urgent
                             </div>
-                            <div class="alert-counter normal" id="normalCount">
+                            <div class="alert-counter normal">
                                 <span id="normalNumber">0</span> Normal
                             </div>
-                            <div class="alert-counter info" id="infoCount">
+                            <div class="alert-counter info">
                                 <span id="infoNumber">0</span> Info
                             </div>
                         </div>
                     </div>
                     
                     <div class="alerts-grid" id="alertsGrid">
-                        <!-- Las alertas se cargarán aquí dinámicamente -->
+                        <!-- Alerts will be loaded here dynamically -->
                     </div>
                     
                     <div class="alert-actions" style="text-align: center;">
                         <button class="alert-btn" onclick="generateShoppingList()">📝 Generate Shopping List</button>
                         <button class="alert-btn" onclick="exportAlerts()">📊 Export Alerts</button>
-                        <button class="alert-btn" onclick="markAllReviewed()">✅ Mark All Reviewed</button>
+                        <button class="alert-btn" onclick="syncWithPOS()">🔄 Sync with POS</button>
                     </div>
                 </div>
 
-                <!-- PRIORITY MANAGEMENT PANEL (Solo para Admin) -->
+                <!-- PRIORITY MANAGEMENT PANEL (Admin Only) -->
                 <div class="priority-panel" id="priorityPanel" style="display: none;">
                     <h3>⚙️ Priority Management (Admin Only)</h3>
                     <div class="priority-controls">
@@ -756,14 +103,7 @@
                             <option value="Wines">🍷 Wines</option>
                             <option value="Beers">🍺 Beers & Kegs</option>
                             <option value="Soft Drinks">🥤 Soft Drinks</option>
-                            <option value="Syrups">🧪 Syrups & Purées</option>
-                        </select>
-                        
-                        <select class="priority-filter" id="priorityLevelFilter">
-                            <option value="">All Priorities</option>
-                            <option value="high">High Priority</option>
-                            <option value="medium">Medium Priority</option>
-                            <option value="low">Low Priority</option>
+                            <option value="Syrups">🧪 Syrups & Mixers</option>
                         </select>
                         
                         <button class="btn btn-primary" onclick="applyPriorityFilters()">Filter</button>
@@ -781,7 +121,7 @@
                         <option value="Wines">🍷 Wines</option>
                         <option value="Beers">🍺 Beers & Kegs</option>
                         <option value="Soft Drinks">🥤 Soft Drinks</option>
-                        <option value="Syrups">🧪 Syrups & Purées</option>
+                        <option value="Syrups">🧪 Syrups & Mixers</option>
                     </select>
                     <select id="alertFilter" style="min-width: 150px;">
                         <option value="">All Products</option>
@@ -790,18 +130,20 @@
                         <option value="good">🟢 Good Stock</option>
                         <option value="optimal">🟢 Optimal Stock</option>
                     </select>
-                    <button class="btn btn-secondary" onclick="clearFilters()" style="padding: 10px 15px; font-size: 0.9em;">Clear Filters</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
                 </div>
                 
                 <div id="loading" class="loading">
                     📡 Loading inventory data...
                 </div>
                 
+                <!-- INVENTORY TABLE -->
                 <table id="inventoryTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>Product Name</th>
                             <th>Category</th>
+                            <th>POS Item</th>
                             <th>Stock Status</th>
                             <th>Current Stock</th>
                             <th>Priority Settings</th>
@@ -815,7 +157,64 @@
         </div>
     </div>
 
-    <!-- BULK PRIORITY UPDATE MODAL -->
+    <!-- MODALS -->
+    
+    <!-- POS Configuration Modal -->
+    <div id="posConfigModal" class="modal">
+        <div class="modal-content">
+            <h3>🔌 Configure POS Integration</h3>
+            <div class="form-group">
+                <label>POS System:</label>
+                <select id="posSystem">
+                    <option value="toast">Toast POS</option>
+                    <option value="square">Square</option>
+                    <option value="clover">Clover</option>
+                    <option value="lightspeed">Lightspeed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>API Key:</label>
+                <input type="password" id="posApiKey" placeholder="Enter your POS API key">
+            </div>
+            <div class="form-group">
+                <label>Restaurant ID:</label>
+                <input type="text" id="posRestaurantId" placeholder="Your restaurant/location ID">
+            </div>
+            <div class="form-group">
+                <label>Auto-Sync Frequency:</label>
+                <select id="syncFrequency">
+                    <option value="realtime">Real-time (recommended)</option>
+                    <option value="5min">Every 5 minutes</option>
+                    <option value="15min">Every 15 minutes</option>
+                    <option value="30min">Every 30 minutes</option>
+                    <option value="1hour">Every hour</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('posConfigModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="savePOSConfig()">Connect & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Mapping Modal -->
+    <div id="itemMappingModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <h3>🔗 Map POS Menu Items to Inventory</h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                Link menu items from your POS to inventory items. When a dish is sold, ingredients will be automatically deducted.
+            </p>
+            <div id="mappingList" class="mapping-list">
+                <!-- Mapping items will be loaded here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('itemMappingModal')">Close</button>
+                <button class="btn btn-primary" onclick="saveItemMappings()">Save Mappings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Priority Update Modal -->
     <div id="bulkUpdateModal" class="modal">
         <div class="modal-content">
             <h3>📦 Bulk Priority Update</h3>
@@ -827,7 +226,7 @@
                     <option value="Wines">🍷 Wines</option>
                     <option value="Beers">🍺 Beers & Kegs</option>
                     <option value="Soft Drinks">🥤 Soft Drinks</option>
-                    <option value="Syrups">🧪 Syrups & Purées</option>
+                    <option value="Syrups">🧪 Syrups & Mixers</option>
                 </select>
             </div>
             <div class="form-group">
@@ -851,797 +250,8 @@
 
     <div id="notification" class="notification"></div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBTHgrFAEKpG7olxxgqn8zUo-XpvD1Zaig",
-            authDomain: "bar-inventory-15a15.firebaseapp.com",
-            projectId: "bar-inventory-15a15",
-            storageBucket: "bar-inventory-15a15.firebasestorage.app",
-            messagingSenderId: "968201633006",
-            appId: "1:968201633006:web:24fd1269373155ff27c7ff"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        let inventoryData = [];
-        let filteredData = [];
-        let currentUser = null;
-        let userRole = 'staff';
-        let alertsData = [];
-
-        // User roles and permissions
-        const USER_ROLES = {
-            'admin@wishbone.com': 'admin',
-            'manager@wishbone.com': 'manager',
-            'staff@wishbone.com': 'staff'
-        };
-
-        // Default priority settings
-        const DEFAULT_PRIORITIES = {
-            'Spirits': { priority: 'high', threshold: 2 },
-            'Wines': { priority: 'medium', threshold: 3 },
-            'Beers': { priority: 'medium', threshold: 6 },
-            'Soft Drinks': { priority: 'low', threshold: 12 },
-            'Syrups': { priority: 'medium', threshold: 2 }
-        };
-
-        // Permission checks
-        function canModifyStock() {
-            return currentUser !== null;
-        }
-
-        function canManageProducts() {
-            return userRole === 'admin' || userRole === 'manager';
-        }
-
-        function canManagePriorities() {
-            return userRole === 'admin';
-        }
-
-        /* ===========================================
-           AUTHENTICATION FUNCTIONS
-        =========================================== */
-        
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                userRole = USER_ROLES[user.email] || 'staff';
-                
-                document.getElementById('userEmail').textContent = user.email;
-                document.getElementById('userRole').textContent = userRole;
-                document.getElementById('userRole').className = `user-role ${userRole}`;
-                
-                updateUIPermissions();
-                
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('appContent').classList.add('authenticated');
-                
-                loadInventoryData();
-                setupRealtimeListener();
-                
-                showNotification(`Welcome back, ${user.email}!`, 'success');
-            } else {
-                currentUser = null;
-                userRole = 'staff';
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('appContent').classList.remove('authenticated');
-            }
-        });
-
-        window.attemptLogin = async function() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const loginBtn = document.getElementById('loginBtn');
-            
-            if (!email || !password) {
-                showError('Please enter both email and password');
-                return;
-            }
-            
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing in...';
-            
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error('Login error:', error);
-                let errorMessage = 'Login failed. Please try again.';
-                
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        errorMessage = 'Invalid email or password.';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Invalid email format.';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Too many failed attempts. Try again later.';
-                        break;
-                }
-                
-                showError(errorMessage);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
-            }
-        }
-
-        window.logout = async function() {
-            if (confirm('Are you sure you want to sign out?')) {
-                try {
-                    await signOut(auth);
-                    showNotification('Signed out successfully', 'success');
-                } catch (error) {
-                    console.error('Logout error:', error);
-                    showNotification('Error signing out', 'error');
-                }
-            }
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        function updateUIPermissions() {
-            const priorityPanel = document.getElementById('priorityPanel');
-            
-            if (canManagePriorities()) {
-                priorityPanel.style.display = 'block';
-            } else {
-                priorityPanel.style.display = 'none';
-            }
-        }
-
-        /* ===========================================
-           PRIORITY & ALERTS SYSTEM
-        =========================================== */
-        
-        function getProductPriority(product) {
-            // Usar configuración personalizada del producto o default por categoría
-            return {
-                priority: product.priority || DEFAULT_PRIORITIES[product.category]?.priority || 'medium',
-                threshold: product.alertThreshold || DEFAULT_PRIORITIES[product.category]?.threshold || 3
-            };
-        }
-
-        function calculateStockStatus(product) {
-            const config = getProductPriority(product);
-            const stock = product.stock;
-            const threshold = config.threshold;
-            
-            if (stock <= threshold) {
-                // Stock bajo, determinar urgencia por prioridad
-                switch (config.priority) {
-                    case 'high':
-                        return { status: 'urgent', message: 'URGENT: Needs immediate restock!' };
-                    case 'medium':
-                        return { status: 'normal', message: 'Normal: Restock soon' };
-                    case 'low':
-                        return { status: 'info', message: 'Info: Low stock noted' };
-                }
-            } else if (stock <= threshold * 2) {
-                return { status: 'good', message: 'Good: Stock adequate' };
-            } else {
-                return { status: 'optimal', message: 'Optimal: Well stocked' };
-            }
-        }
-
-        function generateAlerts() {
-            alertsData = [];
-            
-            inventoryData.forEach(product => {
-                const stockInfo = calculateStockStatus(product);
-                const config = getProductPriority(product);
-                
-                if (['urgent', 'normal', 'info'].includes(stockInfo.status)) {
-                    alertsData.push({
-                        product: product,
-                        status: stockInfo.status,
-                        message: stockInfo.message,
-                        priority: config.priority,
-                        threshold: config.threshold,
-                        daysUntilEmpty: Math.ceil(product.stock / 2) // Estimación simple
-                    });
-                }
-            });
-            
-            // Ordenar por urgencia
-            alertsData.sort((a, b) => {
-                const priorityOrder = { urgent: 3, normal: 2, info: 1 };
-                return priorityOrder[b.status] - priorityOrder[a.status];
-            });
-            
-            updateAlertsDisplay();
-        }
-
-        function updateAlertsDisplay() {
-            // Actualizar contadores
-            const urgentCount = alertsData.filter(a => a.status === 'urgent').length;
-            const normalCount = alertsData.filter(a => a.status === 'normal').length;
-            const infoCount = alertsData.filter(a => a.status === 'info').length;
-            
-            document.getElementById('urgentNumber').textContent = urgentCount;
-            document.getElementById('normalNumber').textContent = normalCount;
-            document.getElementById('infoNumber').textContent = infoCount;
-            
-            // Actualizar grid de alertas
-            const alertsGrid = document.getElementById('alertsGrid');
-            alertsGrid.innerHTML = '';
-            
-            if (alertsData.length === 0) {
-                alertsGrid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: rgba(255,255,255,0.8);">
-                        <h3>🎉 No Alerts!</h3>
-                        <p>All products are well stocked according to their priority settings.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            alertsData.slice(0, 6).forEach(alert => { // Mostrar solo las primeras 6
-                const card = document.createElement('div');
-                card.className = `alert-card ${alert.status}`;
-                card.innerHTML = `
-                    <h4>
-                        ${alert.product.name}
-                        <span class="priority-badge ${alert.priority}">${alert.priority}</span>
-                    </h4>
-                    <p><strong>Stock:</strong> ${alert.product.stock} units</p>
-                    <p><strong>Threshold:</strong> ${alert.threshold} units</p>
-                    <p><strong>Status:</strong> ${alert.message}</p>
-                    <p><strong>Est. Days:</strong> ${alert.daysUntilEmpty} days until empty</p>
-                    <div class="alert-actions">
-                        <button class="alert-btn" onclick="quickRestock('${alert.product.id}')">Quick Restock</button>
-                        <button class="alert-btn" onclick="updatePriority('${alert.product.id}')">Adjust Priority</button>
-                    </div>
-                `;
-                alertsGrid.appendChild(card);
-            });
-            
-            if (alertsData.length > 6) {
-                const moreCard = document.createElement('div');
-                moreCard.className = 'alert-card info';
-                moreCard.innerHTML = `
-                    <h4>+ ${alertsData.length - 6} More Alerts</h4>
-                    <p>View full inventory table below for complete list</p>
-                    <div class="alert-actions">
-                        <button class="alert-btn" onclick="showAllAlerts()">View All</button>
-                    </div>
-                `;
-                alertsGrid.appendChild(moreCard);
-            }
-        }
-
-        /* ===========================================
-           INVENTORY MANAGEMENT
-        =========================================== */
-
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('inventoryBody');
-            tbody.innerHTML = '';
-
-            const sortedData = [...filteredData].sort((a, b) => {
-                // Ordenar por estado de alerta primero, luego alfabéticamente
-                const aStatus = calculateStockStatus(a).status;
-                const bStatus = calculateStockStatus(b).status;
-                
-                const statusOrder = { urgent: 4, normal: 3, info: 2, good: 1, optimal: 0 };
-                const statusDiff = statusOrder[aStatus] - statusOrder[bStatus];
-                
-                return statusDiff !== 0 ? statusDiff : a.name.localeCompare(b.name);
-            });
-
-            sortedData.forEach((item) => {
-                const stockInfo = calculateStockStatus(item);
-                const config = getProductPriority(item);
-                
-                // Controles de stock básicos
-                let stockControls = `
-                    <button class="save-btn" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'subtract')" title="Remove stock">➖</button>
-                    <button class="save-btn" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')" title="Add stock">➕</button>
-                `;
-                
-                // Controles de prioridad (solo admin)
-                let priorityControls = '';
-                if (canManagePriorities()) {
-                    priorityControls = `
-                        <div class="priority-controls-row">
-                            <select class="priority-selector" onchange="updateProductPriority('${item.id}', this.value, document.getElementById('threshold_${item.id}').value)">
-                                <option value="high" ${config.priority === 'high' ? 'selected' : ''}>High</option>
-                                <option value="medium" ${config.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                                <option value="low" ${config.priority === 'low' ? 'selected' : ''}>Low</option>
-                            </select>
-                            <input type="number" class="threshold-input" id="threshold_${item.id}" 
-                                   value="${config.threshold}" min="0" max="50"
-                                   onchange="updateProductPriority('${item.id}', document.querySelector('select[onchange*=\\'${item.id}\\']').value, this.value)">
-                            <button class="save-btn" onclick="saveProductSettings('${item.id}')">💾</button>
-                        </div>
-                    `;
-                } else {
-                    priorityControls = `
-                        <div style="font-size: 0.9em;">
-                            <span class="priority-badge ${config.priority}">${config.priority}</span><br>
-                            <small>Threshold: ${config.threshold}</small>
-                        </div>
-                    `;
-                }
-                
-                const row = `
-                    <tr style="background: ${stockInfo.status === 'urgent' ? 'rgba(229, 62, 62, 0.1)' : 
-                                          stockInfo.status === 'normal' ? 'rgba(237, 137, 54, 0.1)' : 
-                                          'inherit'}">
-                        <td><strong>${item.name}</strong><br><small>${item.category}</small></td>
-                        <td>${item.category}</td>
-                        <td>
-                            <div class="stock-status">
-                                <div class="status-indicator ${stockInfo.status}"></div>
-                                <div>
-                                    <strong>${stockInfo.status.toUpperCase()}</strong><br>
-                                    <small>${stockInfo.message}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <strong style="font-size: 1.2em; color: ${stockInfo.status === 'urgent' ? '#e53e3e' : 
-                                                                    stockInfo.status === 'normal' ? '#ed8936' : '#2d3748'}">
-                                ${item.stock}
-                            </strong>
-                        </td>
-                        <td>${priorityControls}</td>
-                        <td>
-                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                ${stockControls}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        }
-
-        // Función para actualizar stock rápidamente
-        function quickUpdate(itemId, itemName, currentStock, action) {
-            if (!canModifyStock()) {
-                showNotification('Permission denied', 'error');
-                return;
-            }
-            
-            const quantity = parseInt(prompt(`${action === 'add' ? 'Add' : 'Remove'} quantity for ${itemName}:`, '1')) || 1;
-            let newStock;
-            
-            if (action === 'add') {
-                newStock = currentStock + quantity;
-            } else {
-                newStock = currentStock - quantity;
-                if (newStock < 0) {
-                    showNotification('Cannot have negative stock!', 'error');
-                    return;
-                }
-            }
-
-            performStockUpdate(itemId, itemName, newStock, currentStock, quantity, action);
-        }
-
-        async function performStockUpdate(itemId, itemName, newStock, oldStock, quantity, action) {
-            try {
-                const itemRef = doc(db, 'inventory', itemId);
-                await updateDoc(itemRef, {
-                    stock: newStock,
-                    lastUpdated: new Date(),
-                    updatedBy: currentUser.email
-                });
-                
-                const actionText = action === 'add' ? `Added ${quantity}` : `Removed ${quantity}`;
-                showNotification(`${actionText} ${itemName}. Stock: ${oldStock} → ${newStock}`, 'success');
-                
-            } catch (error) {
-                console.error('Error updating stock:', error);
-                showNotification('Error updating stock', 'error');
-            }
-        }
-
-        // Función para actualizar prioridad de producto
-        async function updateProductPriority(itemId, priority, threshold) {
-            if (!canManagePriorities()) {
-                showNotification('Admin access required', 'error');
-                return;
-            }
-            
-            try {
-                const itemRef = doc(db, 'inventory', itemId);
-                await updateDoc(itemRef, {
-                    priority: priority,
-                    alertThreshold: parseInt(threshold),
-                    lastUpdated: new Date(),
-                    updatedBy: currentUser.email
-                });
-                
-                showNotification('Priority settings updated', 'success');
-                // Regenerar alertas
-                setTimeout(() => {
-                    generateAlerts();
-                    renderTable();
-                }, 500);
-                
-            } catch (error) {
-                console.error('Error updating priority:', error);
-                showNotification('Error updating priority', 'error');
-            }
-        }
-
-        function saveProductSettings(itemId) {
-            const prioritySelect = document.querySelector(`select[onchange*='${itemId}']`);
-            const thresholdInput = document.getElementById(`threshold_${itemId}`);
-            
-            if (prioritySelect && thresholdInput) {
-                updateProductPriority(itemId, prioritySelect.value, thresholdInput.value);
-            }
-        }
-
-        /* ===========================================
-           FILTERING AND SEARCH
-        =========================================== */
-
-        function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const alertFilter = document.getElementById('alertFilter').value;
-
-            filteredData = inventoryData.filter(item => {
-                const matchesSearch = item.name.toLowerCase().includes(searchTerm);
-                const matchesCategory = !categoryFilter || item.category === categoryFilter;
-                
-                let matchesAlert = true;
-                if (alertFilter) {
-                    const stockInfo = calculateStockStatus(item);
-                    matchesAlert = stockInfo.status === alertFilter;
-                }
-
-                return matchesSearch && matchesCategory && matchesAlert;
-            });
-
-            renderTable();
-        }
-
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('categoryFilter').value = '';
-            document.getElementById('alertFilter').value = '';
-            applyFilters();
-        }
-
-        /* ===========================================
-           ADMIN FUNCTIONS
-        =========================================== */
-
-        function resetPriorityDefaults() {
-            if (!canManagePriorities()) {
-                showNotification('Admin access required', 'error');
-                return;
-            }
-            
-            if (confirm('Reset all products to default priority settings? This will overwrite custom settings.')) {
-                inventoryData.forEach(async (item) => {
-                    const defaultConfig = DEFAULT_PRIORITIES[item.category];
-                    if (defaultConfig) {
-                        try {
-                            const itemRef = doc(db, 'inventory', item.id);
-                            await updateDoc(itemRef, {
-                                priority: defaultConfig.priority,
-                                alertThreshold: defaultConfig.threshold,
-                                lastUpdated: new Date(),
-                                updatedBy: currentUser.email
-                            });
-                        } catch (error) {
-                            console.error('Error resetting priority:', error);
-                        }
-                    }
-                });
-                
-                showNotification('Priorities reset to defaults', 'success');
-                setTimeout(() => {
-                    loadInventoryData();
-                }, 1000);
-            }
-        }
-
-        function bulkPriorityUpdate() {
-            if (!canManagePriorities()) {
-                showNotification('Admin access required', 'error');
-                return;
-            }
-            
-            document.getElementById('bulkUpdateModal').classList.add('show');
-        }
-
-        async function confirmBulkUpdate() {
-            const category = document.getElementById('bulkCategory').value;
-            const priority = document.getElementById('bulkPriority').value;
-            const threshold = parseInt(document.getElementById('bulkThreshold').value);
-            
-            const itemsToUpdate = category ? 
-                inventoryData.filter(item => item.category === category) : 
-                inventoryData;
-            
-            if (confirm(`Update ${itemsToUpdate.length} products with priority: ${priority}, threshold: ${threshold}?`)) {
-                for (const item of itemsToUpdate) {
-                    try {
-                        const itemRef = doc(db, 'inventory', item.id);
-                        await updateDoc(itemRef, {
-                            priority: priority,
-                            alertThreshold: threshold,
-                            lastUpdated: new Date(),
-                            updatedBy: currentUser.email
-                        });
-                    } catch (error) {
-                        console.error('Error in bulk update:', error);
-                    }
-                }
-                
-                showNotification(`Bulk updated ${itemsToUpdate.length} products`, 'success');
-                closeModal('bulkUpdateModal');
-                setTimeout(() => {
-                    loadInventoryData();
-                }, 1000);
-            }
-        }
-
-        /* ===========================================
-           ALERT ACTIONS
-        =========================================== */
-
-        function generateShoppingList() {
-            const urgentItems = alertsData.filter(a => a.status === 'urgent');
-            const normalItems = alertsData.filter(a => a.status === 'normal');
-            
-            let list = "🛒 SHOPPING LIST - " + new Date().toLocaleDateString() + "\n\n";
-            
-            if (urgentItems.length > 0) {
-                list += "🔴 URGENT (Buy Today):\n";
-                urgentItems.forEach(alert => {
-                    const suggested = Math.max(alert.threshold * 3, 5); // Sugerir cantidad
-                    list += `• ${alert.product.name} - Current: ${alert.product.stock}, Suggested: ${suggested}\n`;
-                });
-                list += "\n";
-            }
-            
-            if (normalItems.length > 0) {
-                list += "🟡 NORMAL (Buy This Week):\n";
-                normalItems.forEach(alert => {
-                    const suggested = Math.max(alert.threshold * 2, 3);
-                    list += `• ${alert.product.name} - Current: ${alert.product.stock}, Suggested: ${suggested}\n`;
-                });
-            }
-            
-            // Crear y descargar archivo
-            const blob = new Blob([list], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `shopping_list_${new Date().toISOString().split('T')[0]}.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification('Shopping list generated!', 'success');
-        }
-
-        function exportAlerts() {
-            const headers = ['Product', 'Category', 'Current Stock', 'Threshold', 'Priority', 'Status', 'Message', 'Days Until Empty'];
-            const csvContent = [
-                headers.join(','),
-                ...alertsData.map(alert => [
-                    `"${alert.product.name}"`,
-                    alert.product.category,
-                    alert.product.stock,
-                    alert.threshold,
-                    alert.priority,
-                    alert.status.toUpperCase(),
-                    `"${alert.message}"`,
-                    alert.daysUntilEmpty
-                ].join(','))
-            ].join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `inventory_alerts_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification('Alerts exported successfully', 'success');
-        }
-
-        function markAllReviewed() {
-            showNotification('All alerts marked as reviewed', 'info');
-            // Aquí podrías agregar lógica para marcar alertas como revisadas en la base de datos
-        }
-
-        function quickRestock(productId) {
-            const product = inventoryData.find(p => p.id === productId);
-            if (product) {
-                const config = getProductPriority(product);
-                const suggested = Math.max(config.threshold * 3, 10);
-                const quantity = parseInt(prompt(`Quick restock for ${product.name}.\nSuggested quantity: ${suggested}`, suggested)) || 0;
-                
-                if (quantity > 0) {
-                    performStockUpdate(productId, product.name, product.stock + quantity, product.stock, quantity, 'add');
-                }
-            }
-        }
-
-        function updatePriority(productId) {
-            if (!canManagePriorities()) {
-                showNotification('Admin access required', 'error');
-                return;
-            }
-            
-            const product = inventoryData.find(p => p.id === productId);
-            if (product) {
-                const newPriority = prompt(`Set priority for ${product.name}:`, getProductPriority(product).priority);
-                const newThreshold = parseInt(prompt(`Set alert threshold:`, getProductPriority(product).threshold));
-                
-                if (newPriority && newThreshold >= 0) {
-                    updateProductPriority(productId, newPriority, newThreshold);
-                }
-            }
-        }
-
-        function showAllAlerts() {
-            // Filtrar tabla para mostrar solo alertas
-            document.getElementById('alertFilter').value = 'urgent';
-            applyFilters();
-            document.querySelector('table').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        /* ===========================================
-           DATA LOADING AND SETUP
-        =========================================== */
-
-        async function loadInventoryData() {
-            if (!currentUser) {
-                console.log('Not authenticated, skipping data load');
-                return;
-            }
-
-            try {
-                const querySnapshot = await getDocs(collection(db, 'inventory'));
-                inventoryData = [];
-                querySnapshot.forEach((doc) => {
-                    inventoryData.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                if (inventoryData.length === 0) {
-                    showNotification('No inventory data found', 'warning');
-                    document.getElementById('loading').innerHTML = '📦 No inventory data found.';
-                } else {
-                    showNotification(`Loaded ${inventoryData.length} items`, 'success');
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('inventoryTable').style.display = 'table';
-                }
-                
-                // Generar alertas y aplicar filtros
-                generateAlerts();
-                applyFilters();
-                
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showNotification('Error loading data', 'error');
-                document.getElementById('loading').innerHTML = '❌ Error loading data. Please refresh.';
-            }
-        }
-
-        function setupRealtimeListener() {
-            if (!currentUser) return;
-            
-            onSnapshot(collection(db, 'inventory'), (snapshot) => {
-                inventoryData = [];
-                snapshot.forEach((doc) => {
-                    inventoryData.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-                
-                generateAlerts();
-                applyFilters();
-            }, (error) => {
-                console.error('Real-time listener error:', error);
-                showNotification('Connection error', 'error');
-            });
-        }
-
-        /* ===========================================
-           UTILITY FUNCTIONS
-        =========================================== */
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('show');
-        }
-
-        // Event listeners
-        document.getElementById('searchInput').addEventListener('input', applyFilters);
-        document.getElementById('categoryFilter').addEventListener('change', applyFilters);
-        document.getElementById('alertFilter').addEventListener('change', applyFilters);
-
-        // Enter key for login
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailInput = document.getElementById('loginEmail');
-            const passwordInput = document.getElementById('loginPassword');
-            
-            [emailInput, passwordInput].forEach(input => {
-                if (input) {
-                    input.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            attemptLogin();
-                        }
-                    });
-                }
-            });
-        });
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.classList.remove('show');
-                }
-            });
-        }
-
-        /* ===========================================
-           GLOBAL FUNCTIONS
-        =========================================== */
-        window.quickUpdate = quickUpdate;
-        window.updateProductPriority = updateProductPriority;
-        window.saveProductSettings = saveProductSettings;
-        window.resetPriorityDefaults = resetPriorityDefaults;
-        window.bulkPriorityUpdate = bulkPriorityUpdate;
-        window.confirmBulkUpdate = confirmBulkUpdate;
-        window.generateShoppingList = generateShoppingList;
-        window.exportAlerts = exportAlerts;
-        window.markAllReviewed = markAllReviewed;
-        window.quickRestock = quickRestock;
-        window.updatePriority = updatePriority;
-        window.showAllAlerts = showAllAlerts;
-        window.clearFilters = clearFilters;
-        window.closeModal = closeModal;
-        window.applyPriorityFilters = function() {
-            // Implementar filtros de prioridad si se necesita
-            applyFilters();
-        };
-
-    </script>
+    <!-- Scripts -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
