@@ -34,11 +34,13 @@ const CONFIG = {
     }
 };
 
-// Detect environment (production if served from Firebase Hosting)
-const isProduction = window.location.hostname !== 'localhost' &&
-                     window.location.hostname !== '127.0.0.1';
+// Always use production endpoints (Cloud Functions are deployed)
+// Set USE_EMULATOR = true only when running: firebase emulators:start
+const USE_EMULATOR = false;
 
-const API_ENDPOINTS = isProduction ? CONFIG.production : CONFIG.development;
+const API_ENDPOINTS = USE_EMULATOR ? CONFIG.development : CONFIG.production;
+
+console.log(`🤖 AI Service: Using ${USE_EMULATOR ? 'DEVELOPMENT' : 'PRODUCTION'} endpoints`);
 
 // Conversation history for context
 let conversationHistory = [];

@@ -36,10 +36,15 @@ import { MAX_CONVERSATION_HISTORY, AI_CONFIG } from '../config/constants.js';
 
 /**
  * API Endpoints configuration
- * Automatically detects environment and uses appropriate URLs
+ *
+ * NOTE: Always using production URLs since Cloud Functions are deployed.
+ * To use local emulators, run: firebase emulators:start
+ * and set USE_EMULATOR = true below.
  *
  * @constant {Object}
  */
+const USE_EMULATOR = false; // Set to true only when running firebase emulators
+
 const ENDPOINTS = {
     production: {
         aiChat: 'https://us-central1-bar-inventory-15a15.cloudfunctions.net/aiChat',
@@ -55,16 +60,19 @@ const ENDPOINTS = {
 
 /**
  * Detect if running in production environment
+ * Uses USE_EMULATOR flag to determine which endpoints to use
  * @constant {boolean}
  */
-const isProduction = window.location.hostname !== 'localhost' &&
-                     window.location.hostname !== '127.0.0.1';
+const isProduction = !USE_EMULATOR;
 
 /**
  * Active API endpoints based on environment
  * @constant {Object}
  */
 const API = isProduction ? ENDPOINTS.production : ENDPOINTS.development;
+
+// Log which endpoints are being used
+console.log(`🤖 AI Service: Using ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} endpoints`);
 
 // =============================================
 // MODULE STATE

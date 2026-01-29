@@ -124,7 +124,13 @@ export async function loadPOSConfig() {
         return { ...posState };
 
     } catch (error) {
-        console.error('Error loading POS config:', error);
+        // Handle permission errors gracefully - POS config is optional
+        if (error.code === 'permission-denied') {
+            console.warn('POS config: No permissions to read. This is normal if POS is not configured yet.');
+        } else {
+            console.error('Error loading POS config:', error);
+        }
+        // Return default state - app continues to work without POS
         return { ...posState };
     }
 }
