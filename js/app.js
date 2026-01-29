@@ -1,19 +1,28 @@
 // Main Application Logic
 import { db, auth } from './firebase-config.js';
-import { 
-    collection, 
-    getDocs, 
-    doc, 
-    updateDoc, 
+import {
+    collection,
+    getDocs,
+    doc,
+    updateDoc,
     onSnapshot,
     setDoc,
     addDoc
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { 
-    signInWithEmailAndPassword, 
-    onAuthStateChanged, 
-    signOut 
+import {
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+// AI Assistant Integration
+import {
+    sendToGroq,
+    getInventoryPredictions,
+    generateAIShoppingList,
+    getInventoryInsights,
+    clearAIConversation
+} from './ai-assistant.js';
 
 // =============================================
 // GLOBAL STATE VARIABLES
@@ -32,6 +41,10 @@ let posConfig = {
 
 // User roles and permissions
 const USER_ROLES = {
+    'admin@inventory.com': 'admin',
+    'manager@inventory.com': 'manager',
+    'staff@inventory.com': 'staff',
+    // Legacy support
     'admin@wishbone.com': 'admin',
     'manager@wishbone.com': 'manager',
     'staff@wishbone.com': 'staff'
@@ -68,26 +81,39 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         userRole = USER_ROLES[user.email] || 'staff';
-        
-        document.getElementById('userEmail').textContent = user.email;
-        document.getElementById('userRole').textContent = userRole;
-        document.getElementById('userRole').className = `user-role ${userRole}`;
-        
+
+        // Update sidebar user info
+        const userName = user.email.split('@')[0];
+        document.getElementById('userName').textContent = userName.charAt(0).toUpperCase() + userName.slice(1);
+        document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+        document.getElementById('userRoleBadge').textContent = userRole;
+        document.getElementById('userRoleBadge').className = `user-role-badge ${userRole}`;
+
         updateUIPermissions();
-        
+
         document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContent').classList.add('authenticated');
-        
+        document.getElementById('appContent').style.display = 'flex';
+
         loadInventoryData();
         setupRealtimeListener();
         loadPOSConfig();
-        
-        showNotification(`Welcome back, ${user.email}!`, 'success');
+
+        showNotification(`Welcome back, ${userName}!`, 'success');
+
+        // Show tour for first-time users
+        if (!localStorage.getItem('tourCompleted')) {
+            setTimeout(() => {
+                if (typeof startTour === 'function') {
+                    startTour();
+                    localStorage.setItem('tourCompleted', 'true');
+                }
+            }, 1500);
+        }
     } else {
         currentUser = null;
         userRole = 'staff';
         document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('appContent').classList.remove('authenticated');
+        document.getElementById('appContent').style.display = 'none';
     }
 });
 
@@ -154,11 +180,14 @@ function showError(message) {
 
 function updateUIPermissions() {
     const priorityPanel = document.getElementById('priorityPanel');
-    
+    const adminSection = document.getElementById('adminSection');
+
     if (canManagePriorities()) {
         priorityPanel.style.display = 'block';
+        if (adminSection) adminSection.style.display = 'block';
     } else {
         priorityPanel.style.display = 'none';
+        if (adminSection) adminSection.style.display = 'none';
     }
 }
 
@@ -540,39 +569,90 @@ function updateAlertsDisplay() {
 // =============================================
 
 function showNotification(message, type = 'success') {
+    // Use new toast system if available
+    if (typeof showToast === 'function') {
+        showToast(message, type);
+        return;
+    }
+
+    // Fallback to toast container
+    const container = document.getElementById('toastContainer');
+    if (container) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icons = {
+            success: '&#10004;',
+            error: '&#10006;',
+            warning: '&#9888;',
+            info: '&#8505;'
+        };
+        toast.innerHTML = `
+            <span class="toast-icon">${icons[type] || icons.info}</span>
+            <div class="toast-content">
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideIn 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+        return;
+    }
+
+    // Last resort fallback
     const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.classList.add('show');
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
+    if (notification) {
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.classList.add('show');
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
 }
 
 function renderTable() {
     const tbody = document.getElementById('inventoryBody');
-    tbody.innerHTML = '';
+    const cardsContainer = document.getElementById('inventoryCards');
+    if (tbody) tbody.innerHTML = '';
+    if (cardsContainer) cardsContainer.innerHTML = '';
 
     const sortedData = [...filteredData].sort((a, b) => {
         const aStatus = calculateStockStatus(a).status;
         const bStatus = calculateStockStatus(b).status;
-        
+
         const statusOrder = { urgent: 4, normal: 3, info: 2, good: 1, optimal: 0 };
         const statusDiff = statusOrder[aStatus] - statusOrder[bStatus];
-        
+
         return statusDiff !== 0 ? statusDiff : a.name.localeCompare(b.name);
     });
+
+    if (sortedData.length === 0) {
+        const emptyHtml = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px;">
+                    <div class="empty-state-icon">&#128269;</div>
+                    <p>No products match your filters</p>
+                </td>
+            </tr>
+        `;
+        if (tbody) tbody.innerHTML = emptyHtml;
+        if (cardsContainer) cardsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128269;</div><p>No products match your filters</p></div>';
+        return;
+    }
 
     sortedData.forEach((item) => {
         const stockInfo = calculateStockStatus(item);
         const config = getProductPriority(item);
-        
+
+        // Table row
         let stockControls = `
-            <button class="save-btn" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'subtract')" title="Remove stock">➖</button>
-            <button class="save-btn" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')" title="Add stock">➕</button>
+            <button class="btn btn-icon btn-secondary" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'subtract')" title="Remove stock">&#10134;</button>
+            <button class="btn btn-icon btn-success" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')" title="Add stock">&#10133;</button>
         `;
-        
+
         let priorityControls = '';
         if (canManagePriorities()) {
             priorityControls = `
@@ -582,56 +662,88 @@ function renderTable() {
                         <option value="medium" ${config.priority === 'medium' ? 'selected' : ''}>Medium</option>
                         <option value="low" ${config.priority === 'low' ? 'selected' : ''}>Low</option>
                     </select>
-                    <input type="number" class="threshold-input" id="threshold_${item.id}" 
+                    <input type="number" class="threshold-input" id="threshold_${item.id}"
                            value="${config.threshold}" min="0" max="50"
                            onchange="updateProductPriority('${item.id}', document.querySelector('select[onchange*=\\'${item.id}\\']').value, this.value)">
-                    <button class="save-btn" onclick="saveProductSettings('${item.id}')">💾</button>
+                    <button class="btn btn-icon btn-primary" onclick="saveProductSettings('${item.id}')" title="Save">&#128190;</button>
                 </div>
             `;
         } else {
             priorityControls = `
-                <div style="font-size: 0.9em;">
-                    <span class="priority-badge ${config.priority}">${config.priority}</span><br>
-                    <small>Threshold: ${config.threshold}</small>
+                <div>
+                    <span class="priority-badge ${config.priority}">${config.priority}</span>
+                    <small style="display: block; margin-top: 4px; color: var(--text-muted);">Threshold: ${config.threshold}</small>
                 </div>
             `;
         }
-        
-        const posMapping = item.posItemId ? 
-            `<small style="color: #48bb78;">✓ Mapped</small>` : 
-            `<small style="color: #999;">Not mapped</small>`;
-        
+
+        const posMapping = item.posItemId ?
+            `<span style="color: var(--success);">&#10004; Mapped</span>` :
+            `<span style="color: var(--text-muted);">Not mapped</span>`;
+
+        const rowClass = stockInfo.status === 'urgent' ? 'urgent' : stockInfo.status === 'normal' ? 'warning' : '';
+
         const row = `
-            <tr style="background: ${stockInfo.status === 'urgent' ? 'rgba(229, 62, 62, 0.1)' : 
-                                  stockInfo.status === 'normal' ? 'rgba(237, 137, 54, 0.1)' : 
-                                  'inherit'}">
-                <td><strong>${item.name}</strong><br><small>${item.category}</small></td>
+            <tr class="${rowClass}">
+                <td>
+                    <div class="product-info">
+                        <span class="product-name">${item.name}</span>
+                        <span class="product-category">${item.category}</span>
+                    </div>
+                </td>
                 <td>${item.category}</td>
                 <td>${posMapping}</td>
                 <td>
                     <div class="stock-status">
                         <div class="status-indicator ${stockInfo.status}"></div>
                         <div>
-                            <strong>${stockInfo.status.toUpperCase()}</strong><br>
-                            <small>${stockInfo.message}</small>
+                            <strong>${stockInfo.status.toUpperCase()}</strong>
                         </div>
                     </div>
                 </td>
                 <td>
-                    <strong style="font-size: 1.2em; color: ${stockInfo.status === 'urgent' ? '#e53e3e' : 
-                                                            stockInfo.status === 'normal' ? '#ed8936' : '#2d3748'}">
-                        ${item.stock}
-                    </strong>
+                    <span class="stock-value ${stockInfo.status}">${item.stock}</span>
                 </td>
                 <td>${priorityControls}</td>
                 <td>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <div class="action-buttons">
                         ${stockControls}
                     </div>
                 </td>
             </tr>
         `;
-        tbody.innerHTML += row;
+        if (tbody) tbody.innerHTML += row;
+
+        // Mobile card
+        const card = `
+            <div class="inventory-card ${rowClass}">
+                <div class="inventory-card-header">
+                    <div>
+                        <div class="inventory-card-title">${item.name}</div>
+                        <div class="inventory-card-category">${item.category}</div>
+                    </div>
+                    <div class="inventory-card-status">
+                        <div class="status-indicator ${stockInfo.status}"></div>
+                        <span class="priority-badge ${config.priority}">${config.priority}</span>
+                    </div>
+                </div>
+                <div class="inventory-card-body">
+                    <div class="inventory-card-stat">
+                        <div class="inventory-card-stat-label">Stock</div>
+                        <div class="inventory-card-stat-value stock-value ${stockInfo.status}">${item.stock}</div>
+                    </div>
+                    <div class="inventory-card-stat">
+                        <div class="inventory-card-stat-label">Threshold</div>
+                        <div class="inventory-card-stat-value">${config.threshold}</div>
+                    </div>
+                </div>
+                <div class="inventory-card-actions">
+                    <button class="btn btn-secondary" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'subtract')">&#10134; Remove</button>
+                    <button class="btn btn-success" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')">&#10133; Add</button>
+                </div>
+            </div>
+        `;
+        if (cardsContainer) cardsContainer.innerHTML += card;
     });
 }
 
@@ -944,23 +1056,61 @@ async function loadInventoryData() {
             });
         });
 
+        const loadingEl = document.getElementById('loadingState');
+        const tableContainer = document.getElementById('inventoryTableContainer');
+
         if (inventoryData.length === 0) {
             showNotification('No inventory data found', 'warning');
-            document.getElementById('loading').innerHTML = '📦 No inventory data found.';
+            if (loadingEl) loadingEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128230;</div><h3 class="empty-state-title">No Products Found</h3><p class="empty-state-message">Your inventory is empty. Add products to get started.</p></div>';
         } else {
             showNotification(`Loaded ${inventoryData.length} items`, 'success');
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('inventoryTable').style.display = 'table';
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (tableContainer) tableContainer.style.display = 'block';
         }
-        
+
+        // Update stats
+        updateStats();
         generateAlerts();
         applyFilters();
-        
+
     } catch (error) {
         console.error('Error loading data:', error);
         showNotification('Error loading data', 'error');
-        document.getElementById('loading').innerHTML = '❌ Error loading data. Please refresh.';
+        const loadingEl = document.getElementById('loadingState');
+        if (loadingEl) loadingEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10060;</div><h3 class="empty-state-title">Error Loading Data</h3><p class="empty-state-message">Please check your connection and refresh the page.</p></div>';
     }
+}
+
+function updateStats() {
+    // Calculate stats
+    let urgentCount = 0;
+    let lowStockCount = 0;
+    let goodStockCount = 0;
+
+    inventoryData.forEach(item => {
+        const stockInfo = calculateStockStatus(item);
+        if (stockInfo.status === 'urgent') urgentCount++;
+        else if (stockInfo.status === 'normal' || stockInfo.status === 'info') lowStockCount++;
+        else goodStockCount++;
+    });
+
+    // Update stat cards
+    const totalEl = document.getElementById('totalProducts');
+    const urgentEl = document.getElementById('urgentAlertsCount');
+    const lowEl = document.getElementById('lowStockCount');
+    const goodEl = document.getElementById('goodStockCount');
+
+    if (totalEl) totalEl.textContent = inventoryData.length;
+    if (urgentEl) urgentEl.textContent = urgentCount;
+    if (lowEl) lowEl.textContent = lowStockCount;
+    if (goodEl) goodEl.textContent = goodStockCount;
+
+    // Update sidebar badges
+    const alertBadge = document.getElementById('alertBadge');
+    const urgentBadge = document.getElementById('urgentBadge');
+
+    if (alertBadge) alertBadge.textContent = urgentCount + lowStockCount;
+    if (urgentBadge) urgentBadge.textContent = urgentCount;
 }
 
 function setupRealtimeListener() {
@@ -1022,4 +1172,172 @@ window.onclick = function(event) {
     });
 }
 
-console.log('🍽️ Restaurant Inventory Management System loaded successfully!');
+// =============================================
+// AI ASSISTANT FUNCTIONS
+// =============================================
+
+let isAIProcessing = false;
+
+/**
+ * Send a message to the AI assistant
+ */
+window.sendAIMessage = async function() {
+    const input = document.getElementById('aiInput');
+    const message = input.value.trim();
+
+    if (!message || isAIProcessing) return;
+
+    input.value = '';
+    await processAIMessage(message);
+}
+
+/**
+ * Quick ask AI with predefined question
+ */
+window.askAI = async function(question) {
+    if (isAIProcessing) return;
+    await processAIMessage(question);
+}
+
+/**
+ * Process AI message and display response
+ */
+async function processAIMessage(message) {
+    const chatMessages = document.getElementById('aiChatMessages');
+    const sendBtn = document.querySelector('.ai-send-btn');
+    const loading = document.getElementById('aiLoading');
+
+    // Add user message to chat
+    const userMessageDiv = document.createElement('div');
+    userMessageDiv.className = 'ai-message user';
+    userMessageDiv.innerHTML = `<div class="ai-message-content">${escapeHtml(message)}</div>`;
+    chatMessages.appendChild(userMessageDiv);
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Show loading state
+    isAIProcessing = true;
+    sendBtn.disabled = true;
+    loading.style.display = 'inline';
+
+    try {
+        // Send to Groq AI with current inventory data
+        const response = await sendToGroq(message, inventoryData);
+
+        // Add AI response to chat
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'ai-message assistant';
+        aiMessageDiv.innerHTML = `<div class="ai-message-content">${formatAIResponse(response)}</div>`;
+        chatMessages.appendChild(aiMessageDiv);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    } catch (error) {
+        console.error('AI Error:', error);
+
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'ai-message assistant';
+        errorDiv.innerHTML = `
+            <div class="ai-message-content" style="border-color: #ff5757;">
+                ⚠️ Sorry, I encountered an error: ${escapeHtml(error.message)}
+                <br><br>Please try again or check your connection.
+            </div>
+        `;
+        chatMessages.appendChild(errorDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    } finally {
+        // Reset loading state
+        isAIProcessing = false;
+        sendBtn.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+
+/**
+ * Format AI response with basic markdown-like formatting
+ */
+function formatAIResponse(text) {
+    // Escape HTML first
+    let formatted = escapeHtml(text);
+
+    // Convert markdown-like formatting
+    // Bold: **text** or __text__
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+    // Bullet points
+    formatted = formatted.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+    // Numbered lists
+    formatted = formatted.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+    // Line breaks
+    formatted = formatted.replace(/\n\n/g, '</p><p>');
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    // Wrap in paragraph if not already structured
+    if (!formatted.startsWith('<')) {
+        formatted = '<p>' + formatted + '</p>';
+    }
+
+    return formatted;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Get AI-powered shopping list
+ */
+window.generateAIShoppingListAction = async function() {
+    if (!currentUser) {
+        showNotification('Please sign in to use AI features', 'error');
+        return;
+    }
+
+    showNotification('Generating AI shopping list...', 'info');
+
+    try {
+        const shoppingList = await generateAIShoppingList(inventoryData);
+
+        // Download as text file
+        const blob = new Blob([shoppingList], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ai_shopping_list_${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showNotification('AI shopping list generated and downloaded!', 'success');
+
+    } catch (error) {
+        console.error('AI Shopping List Error:', error);
+        showNotification('Error generating AI shopping list', 'error');
+    }
+}
+
+/**
+ * Get AI inventory insights
+ */
+window.getAIInsightsAction = async function() {
+    if (!currentUser) {
+        showNotification('Please sign in to use AI features', 'error');
+        return;
+    }
+
+    await askAI('Provide a comprehensive analysis of my current inventory status, including health assessment, risks, and optimization recommendations.');
+}
+
+console.log('📦 Smart Inventory Management System loaded successfully!');
+console.log('🤖 AI Assistant powered by Groq is ready!');

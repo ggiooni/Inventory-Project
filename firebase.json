@@ -1,0 +1,44 @@
+{
+  "functions": {
+    "source": "functions",
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" install"
+    ]
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "README.md",
+      "*.bat"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/ai-chat",
+        "function": "aiChat"
+      },
+      {
+        "source": "/api/predictions",
+        "function": "getAIPredictions"
+      },
+      {
+        "source": "/api/shopping-list",
+        "function": "generateShoppingList"
+      }
+    ]
+  },
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
+}

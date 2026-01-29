@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+functions/node_modules/
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.production
+*.env
+.runtimeconfig.json
+functions/.runtimeconfig.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build
+dist/
+build/
+
+# Sensitive files
+**/api-keys.js
+**/secrets.js
