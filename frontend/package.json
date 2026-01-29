@@ -1,0 +1,23 @@
+{
+  "name": "smart-inventory-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Smart Inventory Management System",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "inventory",
+    "management",
+    "frontend"
+  ],
+  "author": "Nicolas Boggioni Troncoso & Fernando Moraes",
+  "license": "ISC",
+  "devDependencies": {
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0",
+    "jsdom": "^24.0.0"
+  }
+}
