@@ -37,3 +37,7 @@ build/
 # Sensitive files
 **/api-keys.js
 **/secrets.js
+*.local.txt
+CREDENTIALS*
+*credentials*
+*password*

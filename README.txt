@@ -1,19 +1,16 @@
-Smart Inventory - Demo Credentials
-===================================
+Smart Inventory - Demo Access
+=============================
 
-To use the application, use these credentials:
+To use the application, demo credentials are available.
 
-Admin User:
-  Email: admin@inventory.com
-  Password: admin123.
+For security reasons, credentials are not stored in the repository.
+Please contact the project administrator or check the Firebase Console
+for demo user credentials.
 
-Manager User:
-  Email: manager@inventory.com
-  Password: manager123.
-
-Staff User:
-  Email: staff@inventory.com
-  Password: staff123.
+Demo User Roles:
+- Admin: Full system access
+- Manager: Inventory and POS management
+- Staff: View and update stock only
 
 ---
 BSc Computer Science - Final Year Project
