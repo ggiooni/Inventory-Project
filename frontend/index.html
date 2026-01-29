@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart Inventory Management System with AI Integration">
+    <meta name="author" content="Nicolas Boggioni Troncoso">
+    <title>Smart Inventory - AI-Powered Management System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <div class="login-logo">&#128230;</div>
+            <h1 class="login-title">Smart Inventory</h1>
+            <p class="login-subtitle">AI-Powered Inventory Management</p>
+            <input type="email" id="loginEmail" class="login-input" placeholder="Email" autocomplete="email" autofocus aria-label="Email address">
+            <input type="password" id="loginPassword" class="login-input" placeholder="Password" autocomplete="current-password" aria-label="Password">
+            <button class="login-btn" id="loginBtn" onclick="attemptLogin()">Sign In</button>
+            <div id="loginError" class="login-error" role="alert"></div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION -->
+    <div id="appContent" class="app-layout" style="display: none;">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">&#128230;</div>
+                <span class="sidebar-title">Smart Inventory</span>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    &#10094;
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <a class="nav-item active" data-section="dashboard" onclick="navigateTo('dashboard')">
+                        <span class="nav-item-icon">&#128200;</span>
+                        <span class="nav-item-text">Dashboard</span>
+                    </a>
+                    <a class="nav-item" data-section="inventory" onclick="navigateTo('inventory')">
+                        <span class="nav-item-icon">&#128230;</span>
+                        <span class="nav-item-text">Inventory</span>
+                        <span class="nav-item-badge" id="alertBadge">0</span>
+                    </a>
+                    <a class="nav-item" data-section="ai-assistant" onclick="navigateTo('ai-assistant')">
+                        <span class="nav-item-icon">&#129302;</span>
+                        <span class="nav-item-text">AI Assistant</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Integration</div>
+                    <a class="nav-item" data-section="pos" onclick="navigateTo('pos')">
+                        <span class="nav-item-icon">&#128268;</span>
+                        <span class="nav-item-text">POS Integration</span>
+                    </a>
+                    <a class="nav-item" data-section="alerts" onclick="navigateTo('alerts')">
+                        <span class="nav-item-icon">&#128276;</span>
+                        <span class="nav-item-text">Alerts</span>
+                        <span class="nav-item-badge urgent" id="urgentBadge">0</span>
+                    </a>
+                </div>
+
+                <div class="nav-section" id="adminSection" style="display: none;">
+                    <div class="nav-section-title">Administration</div>
+                    <a class="nav-item" data-section="settings" onclick="navigateTo('settings')">
+                        <span class="nav-item-icon">&#9881;</span>
+                        <span class="nav-item-text">Settings</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">User</div>
+                        <span class="user-role-badge" id="userRoleBadge">staff</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MOBILE OVERLAY -->
+        <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- TOP HEADER -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Open menu">
+                        &#9776;
+                    </button>
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="connection-status" id="connectionStatus">
+                        <span class="status-dot"></span>
+                        <span>Live Database</span>
+                    </div>
+                    <button class="header-btn theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                        &#127769;
+                    </button>
+                    <button class="header-btn" id="helpBtn" onclick="startTour()" aria-label="Help tour">
+                        &#10067;
+                    </button>
+                    <button class="header-btn" onclick="logout()" aria-label="Sign out">
+                        &#128682;
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENT WRAPPER -->
+            <div class="content-wrapper">
+                <!-- QUICK STATS -->
+                <section class="stats-grid" id="statsSection">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">&#128230;</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Products</div>
+                            <div class="stat-value" id="totalProducts">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon danger">&#128680;</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Urgent Alerts</div>
+                            <div class="stat-value" id="urgentAlertsCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">&#128276;</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Low Stock Items</div>
+                            <div class="stat-value" id="lowStockCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">&#9989;</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Good Stock</div>
+                            <div class="stat-value" id="goodStockCount">0</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI ASSISTANT PANEL -->
+                <section class="panel ai-panel" id="aiAssistantPanel">
+                    <div class="panel-header" onclick="togglePanel('aiAssistantPanel')">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">&#129302;</span>
+                            <span class="panel-title">AI Assistant</span>
+                        </div>
+                        <div class="panel-header-right">
+                            <div class="ai-status">
+                                <span class="ai-status-dot"></span>
+                                <span>Powered by Groq</span>
+                            </div>
+                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="ai-suggestions">
+                            <button class="ai-suggestion-btn" onclick="askAI('What items need to be restocked this week?')">
+                                &#128230; What needs restocking?
+                            </button>
+                            <button class="ai-suggestion-btn" onclick="askAI('Generate a shopping list based on current stock levels')">
+                                &#128722; Generate shopping list
+                            </button>
+                            <button class="ai-suggestion-btn" onclick="askAI('Which items are overstocked and might go to waste?')">
+                                &#9888; Overstock warnings
+                            </button>
+                            <button class="ai-suggestion-btn" onclick="askAI('Analyze consumption patterns and predict next week needs')">
+                                &#128200; Predict next week
+                            </button>
+                        </div>
+
+                        <div class="ai-chat-messages" id="aiChatMessages" role="log" aria-live="polite">
+                            <div class="ai-message assistant">
+                                <div class="ai-message-content">
+                                    &#128075; Hello! I'm your AI inventory assistant. Ask me anything about your stock levels, predictions, or get recommendations for your inventory.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-input-container">
+                            <input type="text" id="aiInput" class="ai-input"
+                                   placeholder="Ask about inventory, predictions, or recommendations..."
+                                   onkeypress="if(event.key === 'Enter') sendAIMessage()"
+                                   aria-label="AI chat input">
+                            <button class="ai-send-btn" onclick="sendAIMessage()" aria-label="Send message">
+                                <span>Send</span>
+                                <span class="ai-loading" id="aiLoading" style="display: none;">&#8987;</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ALERTS DASHBOARD -->
+                <section class="panel alerts-panel" id="alertsDashboard">
+                    <div class="panel-header" onclick="togglePanel('alertsDashboard')">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">&#128680;</span>
+                            <span class="panel-title">Stock Alerts</span>
+                        </div>
+                        <div class="panel-header-right">
+                            <div class="alert-summary">
+                                <span class="alert-counter urgent"><span id="urgentNumber">0</span> Urgent</span>
+                                <span class="alert-counter"><span id="normalNumber">0</span> Normal</span>
+                                <span class="alert-counter"><span id="infoNumber">0</span> Info</span>
+                            </div>
+                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="alerts-grid" id="alertsGrid">
+                            <!-- Alerts loaded dynamically -->
+                        </div>
+                        <div class="alert-actions" style="margin-top: 16px; text-align: center;">
+                            <button class="alert-btn" onclick="generateShoppingList()">&#128221; Generate Shopping List</button>
+                            <button class="alert-btn" onclick="exportAlerts()">&#128200; Export Alerts</button>
+                            <button class="alert-btn" onclick="syncWithPOS()">&#128260; Sync with POS</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- POS INTEGRATION PANEL -->
+                <section class="panel pos-panel" id="posIntegrationPanel">
+                    <div class="panel-header" onclick="togglePanel('posIntegrationPanel')">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">&#128268;</span>
+                            <span class="panel-title">POS Integration Status</span>
+                        </div>
+                        <div class="panel-header-right">
+                            <button class="btn btn-small" onclick="event.stopPropagation(); configurePOS()">Configure</button>
+                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="pos-stats">
+                            <div class="pos-stat-card">
+                                <h3>POS System</h3>
+                                <p class="status-badge" id="toastStatus">Not Connected</p>
+                                <p class="last-sync">Last Sync: <span id="lastSync">Never</span></p>
+                            </div>
+                            <div class="pos-stat-card">
+                                <h3>Items Mapped</h3>
+                                <p class="stat-number" id="mappedItems">0</p>
+                                <button class="btn-small" onclick="openItemMapping()">Map Items</button>
+                            </div>
+                            <div class="pos-stat-card">
+                                <h3>Auto-Updates</h3>
+                                <p class="stat-number" id="autoUpdates">0</p>
+                                <p class="stat-label">Today</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PRIORITY MANAGEMENT (Admin Only) -->
+                <section class="panel" id="priorityPanel" style="display: none;">
+                    <div class="panel-header" onclick="togglePanel('priorityPanel')">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">&#9881;</span>
+                            <span class="panel-title">Priority Management (Admin)</span>
+                        </div>
+                        <div class="panel-header-right">
+                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="priority-controls-row" style="margin-bottom: 16px;">
+                            <select class="filter-select" id="categoryPriorityFilter">
+                                <option value="">All Categories</option>
+                                <option value="Spirits">&#127866; Spirits</option>
+                                <option value="Wines">&#127863; Wines</option>
+                                <option value="Beers">&#127866; Beers & Kegs</option>
+                                <option value="Soft Drinks">&#129380; Soft Drinks</option>
+                                <option value="Syrups">&#129514; Syrups & Mixers</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="applyPriorityFilters()">Filter</button>
+                            <button class="btn btn-secondary" onclick="resetPriorityDefaults()">Reset Defaults</button>
+                            <button class="btn btn-warning" onclick="bulkPriorityUpdate()">Bulk Update</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SEARCH AND FILTERS -->
+                <section class="search-filter-bar" id="searchSection">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">&#128269;</span>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search products..." aria-label="Search products">
+                    </div>
+                    <select id="categoryFilter" class="filter-select" aria-label="Filter by category">
+                        <option value="">All Categories</option>
+                        <option value="Spirits">&#127866; Spirits</option>
+                        <option value="Wines">&#127863; Wines</option>
+                        <option value="Beers">&#127866; Beers & Kegs</option>
+                        <option value="Soft Drinks">&#129380; Soft Drinks</option>
+                        <option value="Syrups">&#129514; Syrups & Mixers</option>
+                    </select>
+                    <select id="alertFilter" class="filter-select" aria-label="Filter by status">
+                        <option value="">All Status</option>
+                        <option value="urgent">&#128308; Urgent</option>
+                        <option value="normal">&#128992; Low Stock</option>
+                        <option value="good">&#128994; Good Stock</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                </section>
+
+                <!-- LOADING STATE -->
+                <div id="loadingState" class="loading-spinner">
+                    <div class="spinner"></div>
+                    <span>Loading inventory data...</span>
+                </div>
+
+                <!-- INVENTORY TABLE (Desktop) -->
+                <section class="table-container" id="inventoryTableContainer" style="display: none;">
+                    <table class="inventory-table" id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>POS Status</th>
+                                <th>Stock Status</th>
+                                <th>Current Stock</th>
+                                <th>Priority Settings</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryBody">
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- INVENTORY CARDS (Mobile) -->
+                <section class="inventory-cards" id="inventoryCards">
+                    <!-- Cards loaded dynamically -->
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
+
+    <!-- ONBOARDING TOUR OVERLAY -->
+    <div class="tour-overlay" id="tourOverlay">
+        <div class="tour-highlight" id="tourHighlight"></div>
+        <div class="tour-tooltip" id="tourTooltip">
+            <div class="tour-tooltip-title" id="tourTitle">Welcome to Smart Inventory!</div>
+            <div class="tour-tooltip-content" id="tourContent">
+                Let's take a quick tour to help you get started with the system.
+            </div>
+            <div class="tour-tooltip-footer">
+                <span class="tour-progress" id="tourProgress">Step 1 of 5</span>
+                <div class="tour-buttons">
+                    <button class="btn btn-secondary" onclick="skipTour()">Skip</button>
+                    <button class="btn btn-primary" onclick="nextTourStep()">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- POS Configuration Modal -->
+    <div class="modal-overlay" id="posConfigModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">&#128268; Configure POS Integration</h3>
+                <button class="modal-close" onclick="closeModal('posConfigModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>POS System</label>
+                    <select id="posSystem">
+                        <option value="toast">Toast POS</option>
+                        <option value="square">Square</option>
+                        <option value="clover">Clover</option>
+                        <option value="lightspeed">Lightspeed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="posApiKey" placeholder="Enter your POS API key">
+                </div>
+                <div class="form-group">
+                    <label>Location ID</label>
+                    <input type="text" id="posRestaurantId" placeholder="Your location ID">
+                </div>
+                <div class="form-group">
+                    <label>Auto-Sync Frequency</label>
+                    <select id="syncFrequency">
+                        <option value="realtime">Real-time (recommended)</option>
+                        <option value="5min">Every 5 minutes</option>
+                        <option value="15min">Every 15 minutes</option>
+                        <option value="30min">Every 30 minutes</option>
+                        <option value="1hour">Every hour</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('posConfigModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="savePOSConfig()">Connect & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Mapping Modal -->
+    <div class="modal-overlay" id="itemMappingModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">&#128279; Map POS Items to Inventory</h3>
+                <button class="modal-close" onclick="closeModal('itemMappingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); margin-bottom: 20px;">
+                    Link menu items from your POS to inventory items. When a dish is sold, ingredients will be automatically deducted.
+                </p>
+                <div id="mappingList">
+                    <!-- Mapping items loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('itemMappingModal')">Close</button>
+                <button class="btn btn-primary" onclick="saveItemMappings()">Save Mappings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Priority Update Modal -->
+    <div class="modal-overlay" id="bulkUpdateModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">&#128230; Bulk Priority Update</h3>
+                <button class="modal-close" onclick="closeModal('bulkUpdateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="bulkCategory">
+                        <option value="">All Categories</option>
+                        <option value="Spirits">Spirits</option>
+                        <option value="Wines">Wines</option>
+                        <option value="Beers">Beers & Kegs</option>
+                        <option value="Soft Drinks">Soft Drinks</option>
+                        <option value="Syrups">Syrups & Mixers</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>New Priority Level</label>
+                    <select id="bulkPriority">
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Alert Threshold</label>
+                    <input type="number" id="bulkThreshold" min="0" max="50" value="2">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('bulkUpdateModal')">Cancel</button>
+                <button class="btn btn-warning" onclick="confirmBulkUpdate()">Update All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal confirm-modal">
+            <div class="modal-body">
+                <div class="confirm-icon warning" id="confirmIcon">&#9888;</div>
+                <h3 class="confirm-title" id="confirmTitle">Are you sure?</h3>
+                <p class="confirm-message" id="confirmMessage">This action cannot be undone.</p>
+                <div class="confirm-buttons">
+                    <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+                    <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Fallback if modules fail to load
+        window.attemptLogin = window.attemptLogin || function() {
+            showToast('Loading... Please wait a moment and try again.', 'warning');
+        };
+        window.logout = window.logout || function() {
+            showToast('Application not fully loaded. Please refresh.', 'error');
+        };
+
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('themeToggle').innerHTML = newTheme === 'dark' ? '&#9728;' : '&#127769;';
+        }
+
+        // Load saved theme
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+
+        // Panel Collapse
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            panel.classList.toggle('collapsed');
+        }
+
+        // Sidebar Toggle
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        });
+
+        // Load sidebar state
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+
+        // Mobile Menu
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+        }
+
+        // Navigation
+        function navigateTo(section) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${section}"]`).classList.add('active');
+            document.getElementById('pageTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1).replace('-', ' ');
+            closeMobileMenu();
+
+            // Scroll to section
+            const sectionEl = document.getElementById(section + 'Panel') ||
+                            document.getElementById(section + 'Section') ||
+                            document.getElementById(section + 'Dashboard');
+            if (sectionEl) {
+                sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Toast Notifications
+        function showToast(message, type = 'info', title = '') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icons = {
+                success: '&#10004;',
+                error: '&#10006;',
+                warning: '&#9888;',
+                info: '&#8505;'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <div class="toast-content">
+                    ${title ? `<div class="toast-title">${title}</div>` : ''}
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Tour Steps
+        const tourSteps = [
+            {
+                element: '#statsSection',
+                title: 'Quick Stats Overview',
+                content: 'Here you can see a summary of your inventory status at a glance - total products, alerts, and stock levels.'
+            },
+            {
+                element: '#aiAssistantPanel',
+                title: 'AI Assistant',
+                content: 'Ask questions about your inventory in natural language. The AI can help with predictions, shopping lists, and insights.'
+            },
+            {
+                element: '#alertsDashboard',
+                title: 'Stock Alerts',
+                content: 'Critical stock alerts are shown here. Products are categorized by urgency based on their priority settings.'
+            },
+            {
+                element: '#searchSection',
+                title: 'Search & Filters',
+                content: 'Quickly find products by name, category, or stock status using these filters.'
+            },
+            {
+                element: '#sidebar',
+                title: 'Navigation',
+                content: 'Use the sidebar to navigate between different sections. You can collapse it for more space.'
+            }
+        ];
+
+        let currentTourStep = 0;
+
+        function startTour() {
+            currentTourStep = 0;
+            document.getElementById('tourOverlay').classList.add('active');
+            showTourStep();
+        }
+
+        function showTourStep() {
+            const step = tourSteps[currentTourStep];
+            const element = document.querySelector(step.element);
+            const highlight = document.getElementById('tourHighlight');
+            const tooltip = document.getElementById('tourTooltip');
+
+            if (element) {
+                const rect = element.getBoundingClientRect();
+                highlight.style.top = rect.top - 8 + 'px';
+                highlight.style.left = rect.left - 8 + 'px';
+                highlight.style.width = rect.width + 16 + 'px';
+                highlight.style.height = rect.height + 16 + 'px';
+
+                tooltip.style.top = rect.bottom + 20 + 'px';
+                tooltip.style.left = Math.max(20, rect.left) + 'px';
+            }
+
+            document.getElementById('tourTitle').textContent = step.title;
+            document.getElementById('tourContent').textContent = step.content;
+            document.getElementById('tourProgress').textContent = `Step ${currentTourStep + 1} of ${tourSteps.length}`;
+        }
+
+        function nextTourStep() {
+            currentTourStep++;
+            if (currentTourStep >= tourSteps.length) {
+                skipTour();
+                showToast('Tour completed! You\'re ready to use Smart Inventory.', 'success');
+            } else {
+                showTourStep();
+            }
+        }
+
+        function skipTour() {
+            document.getElementById('tourOverlay').classList.remove('active');
+            currentTourStep = 0;
+        }
+
+        // Modal Management
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Close modal on backdrop click
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+
+        // Escape key closes modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+                skipTour();
+            }
+        });
+    </script>
+    <!-- Main Application Module -->
+    <script type="module" src="src/app.js"></script>
+    <script type="module">
+        /**
+         * Application Bootstrap
+         * Loads the main application module and handles any initialization errors
+         */
+        import('./src/app.js').then(() => {
+            console.log('Smart Inventory - Application loaded successfully!');
+            console.log('BSc Computer Science - Final Year Project');
+            console.log('Dorset College Dublin - 2025');
+        }).catch(err => {
+            console.error('Failed to load application:', err);
+            document.getElementById('loginError').textContent = 'Error loading application. Check console (F12).';
+            document.getElementById('loginError').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

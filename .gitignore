@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+.runtimeconfig.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Test coverage
+coverage/
+
+# Credentials (never commit these)
+*.pem
+*.key
+service-account*.json
+credentials*.json
+CREDENTIALS*.txt
+CODE_EXPLANATION.md
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Mobile (React Native)
+mobile/node_modules/
+mobile/.expo/
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/app/build/
+*.apk
+*.ipa
