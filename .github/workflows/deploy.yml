@@ -1,0 +1,100 @@
+name: CD - Deploy to Firebase
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Wait for CI to pass before deploying
+  ci:
+    name: Run CI Pipeline
+    uses: ./.github/workflows/ci.yml
+
+  # ──────────────────────────────────────────────
+  # Deploy to Staging (on push to main)
+  # ──────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [ci]
+    environment: staging
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --production
+
+      - name: Install frontend function dependencies
+        working-directory: frontend/functions
+        run: npm ci --production
+
+      - name: Deploy Firestore Rules
+        working-directory: frontend
+        run: firebase deploy --only firestore:rules --project ${{ vars.FIREBASE_PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy Cloud Functions
+        working-directory: frontend
+        run: firebase deploy --only functions --project ${{ vars.FIREBASE_PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy Frontend Hosting
+        working-directory: frontend
+        run: firebase deploy --only hosting --project ${{ vars.FIREBASE_PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
+
+  # ──────────────────────────────────────────────
+  # Deploy to Production (manual approval)
+  # ──────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    environment: production
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --production
+
+      - name: Install frontend function dependencies
+        working-directory: frontend/functions
+        run: npm ci --production
+
+      - name: Deploy Firestore Rules
+        working-directory: frontend
+        run: firebase deploy --only firestore:rules --project ${{ vars.FIREBASE_PROJECT_ID_PROD }} --token ${{ secrets.FIREBASE_TOKEN_PROD }}
+
+      - name: Deploy Cloud Functions
+        working-directory: frontend
+        run: firebase deploy --only functions --project ${{ vars.FIREBASE_PROJECT_ID_PROD }} --token ${{ secrets.FIREBASE_TOKEN_PROD }}
+
+      - name: Deploy Frontend Hosting
+        working-directory: frontend
+        run: firebase deploy --only hosting --project ${{ vars.FIREBASE_PROJECT_ID_PROD }} --token ${{ secrets.FIREBASE_TOKEN_PROD }}

@@ -465,7 +465,7 @@ function createTableRow(item, stockInfo, config, rowClass) {
         <button class="btn btn-icon btn-success" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')" title="Add stock">&#10133;</button>
     `;
 
-    let priorityControls = '';
+    let priorityControls = ''; // eslint-disable-line no-useless-assignment
     if (canManagePriorities()) {
         priorityControls = `
             <div class="priority-controls-row">
@@ -993,7 +993,7 @@ async function processAIMessage(message) {
 function formatAIResponse(text) {
     let formatted = escapeHtml(text);
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    formatted = formatted.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+    formatted = formatted.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
     formatted = formatted.replace(/\n\n/g, '</p><p>');
     formatted = formatted.replace(/\n/g, '<br>');
     if (!formatted.startsWith('<')) {

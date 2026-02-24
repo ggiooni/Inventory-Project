@@ -35,6 +35,9 @@ build/
 # Test coverage
 coverage/
 
+# Firebase config with secrets (never commit)
+firebase-config.local.js
+
 # Credentials (never commit these)
 *.pem
 *.key

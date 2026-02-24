@@ -176,7 +176,7 @@ export async function sendToGroq(userMessage, inventoryData = []) {
         if (error.message.includes('Failed to fetch') ||
             error.message.includes('NetworkError')) {
             serviceAvailable = false;
-            throw new Error('AI service is not available. Please ensure Cloud Functions are deployed.');
+            throw new Error('AI service is not available. Please ensure Cloud Functions are deployed.', { cause: error });
         }
 
         throw error;

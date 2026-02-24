@@ -24,24 +24,10 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 
 /**
  * Firebase project configuration object
- * Contains all necessary credentials for connecting to Firebase services
- *
- * @constant {Object}
- * @property {string} apiKey - Public API key for Firebase project
- * @property {string} authDomain - Authentication domain
- * @property {string} projectId - Unique project identifier
- * @property {string} storageBucket - Cloud Storage bucket URL
- * @property {string} messagingSenderId - Cloud Messaging sender ID
- * @property {string} appId - Firebase application ID
+ * Loaded from firebase-config.local.js (gitignored).
+ * See firebase-config.example.js for the template.
  */
-const firebaseConfig = {
-    apiKey: "AIzaSyBTHgrFAEKpG7olxxgqn8zUo-XpvD1Zaig",
-    authDomain: "bar-inventory-15a15.firebaseapp.com",
-    projectId: "bar-inventory-15a15",
-    storageBucket: "bar-inventory-15a15.firebasestorage.app",
-    messagingSenderId: "968201633006",
-    appId: "1:968201633006:web:24fd1269373155ff27c7ff"
-};
+import { firebaseConfig } from './firebase-config.local.js';
 
 /**
  * Initialize Firebase application instance
