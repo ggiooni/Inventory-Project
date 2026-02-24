@@ -25,6 +25,7 @@ inventory-project/
 |------|------|--------|
 | Nicolas Boggioni Troncoso | Full Stack Developer | [@GGiooni](https://github.com/GGiooni) |
 | Fernando Moraes | Mobile Developer | [@nando-moraes](https://github.com/nando-moraes) |
+| Geison Herrar | Collaborator | |
 
 ---
 
