@@ -69,15 +69,15 @@ app.use('/api/alerts', alertsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/pos', posRoutes);
 
-// 404 handler
-app.use((req, res) => {
+// 404 handler - must be after all routes, before error handler
+app.use((req, res, _next) => {
     res.status(404).json({
         success: false,
-        error: 'Endpoint not found'
+        error: `Endpoint not found: ${req.method} ${req.path}`
     });
 });
 
-// Global error handler
+// Global error handler (4 params required for Express to recognize it)
 app.use(errorHandler);
 
 // ===========================================

@@ -151,7 +151,7 @@ const createItem = asyncHandler(async (req, res) => {
  */
 const updateItem = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const updates = req.body;
+    const { name, category, stock, priority, alertThreshold } = req.body;
 
     if (!db) {
         throw new ApiError(500, 'Database not available');
@@ -164,7 +164,15 @@ const updateItem = asyncHandler(async (req, res) => {
         throw new ApiError(404, 'Item not found');
     }
 
-    // Add metadata
+    // Only allow whitelisted fields to be updated
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (category !== undefined) updates.category = category;
+    if (stock !== undefined) updates.stock = stock;
+    if (priority !== undefined) updates.priority = priority;
+    if (alertThreshold !== undefined) updates.alertThreshold = alertThreshold;
+
+    // Add metadata (server-controlled, not from client)
     updates.updatedAt = new Date().toISOString();
     updates.updatedBy = req.user.email;
 
@@ -198,6 +206,11 @@ const updateStock = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Quantity and action are required');
     }
 
+    const parsedQuantity = parseInt(quantity, 10);
+    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+        throw new ApiError(400, 'Quantity must be a positive number');
+    }
+
     const docRef = db.collection(COLLECTION).doc(id);
     const doc = await docRef.get();
 
@@ -209,9 +222,9 @@ const updateStock = asyncHandler(async (req, res) => {
     let newStock;
 
     if (action === 'add') {
-        newStock = currentStock + parseInt(quantity);
+        newStock = currentStock + parsedQuantity;
     } else if (action === 'subtract') {
-        newStock = currentStock - parseInt(quantity);
+        newStock = currentStock - parsedQuantity;
         if (newStock < 0) {
             throw new ApiError(400, 'Cannot have negative stock');
         }
@@ -336,6 +349,8 @@ function calculateStockStatus(item) {
                 return { status: STOCK_STATUS.NORMAL, message: 'Normal: Restock soon' };
             case 'low':
                 return { status: STOCK_STATUS.INFO, message: 'Info: Low stock noted' };
+            default:
+                return { status: STOCK_STATUS.NORMAL, message: 'Normal: Restock soon' };
         }
     } else if (stock <= threshold * 2) {
         return { status: STOCK_STATUS.GOOD, message: 'Good: Stock adequate' };

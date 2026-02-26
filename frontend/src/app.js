@@ -160,6 +160,17 @@ async function handleAuthSuccess(authData) {
 
     // Load data
     await loadInventoryData();
+
+    // Hide loading spinner and show inventory table
+    const loadingState = document.getElementById('loadingState');
+    const tableContainer = document.getElementById('inventoryTableContainer');
+    if (loadingState) loadingState.style.display = 'none';
+    if (tableContainer) tableContainer.style.display = '';
+
+    generateAlerts();
+    updateStatsDisplay();
+    renderInventoryTable();
+
     setupRealtimeListener(
         () => {
             generateAlerts();
@@ -774,6 +785,44 @@ window.bulkPriorityUpdate = function() {
     document.getElementById('bulkUpdateModal').classList.add('show');
 };
 
+window.applyPriorityFilters = function() {
+    const categoryFilter = document.getElementById('categoryPriorityFilter');
+    if (categoryFilter && categoryFilter.value) {
+        applyFilters({ category: categoryFilter.value });
+    } else {
+        applyFilters({});
+    }
+    renderInventoryTable();
+};
+
+window.confirmBulkUpdate = async function() {
+    if (!canManagePriorities()) {
+        showNotification(ERROR_MESSAGES.PERMISSION.ADMIN_REQUIRED, 'error');
+        return;
+    }
+    const priority = document.getElementById('bulkPriority')?.value || 'medium';
+    const threshold = parseInt(document.getElementById('bulkThreshold')?.value, 10) || 2;
+    const user = getCurrentUser();
+    const items = getFilteredItems();
+
+    for (const item of items) {
+        await updatePriority(item.id, priority, threshold, user.email);
+    }
+    showNotification(`Bulk update applied to ${items.length} items`, 'success');
+    closeModal('bulkUpdateModal');
+    await loadInventoryData();
+    renderInventoryTable();
+};
+
+window.confirmAction = function() {
+    const confirmBtn = document.getElementById('confirmBtn');
+    if (confirmBtn && confirmBtn._pendingAction) {
+        confirmBtn._pendingAction();
+        confirmBtn._pendingAction = null;
+    }
+    closeModal('confirmModal');
+};
+
 // Export Functions
 window.generateShoppingList = function() {
     const result = createShoppingList();
@@ -917,11 +966,26 @@ window.removeIngredient = function(btn) {
 
 window.saveItemMappings = async function() {
     const user = getCurrentUser();
-    const mappings = [];  // Would collect from form
+    const mappingRows = document.querySelectorAll('#mappingList .mapping-row');
+    const mappings = [];
+
+    mappingRows.forEach(row => {
+        const inventoryId = row.querySelector('[data-inventory-id]')?.dataset.inventoryId;
+        const posItemId = row.querySelector('.pos-item-select')?.value;
+        if (inventoryId && posItemId) {
+            mappings.push({ inventoryId, posItemId });
+        }
+    });
+
+    if (mappings.length === 0) {
+        showNotification('No mappings to save. Please map at least one item.', 'warning');
+        return;
+    }
+
     const result = await saveItemMappings(mappings, user.email);
 
     if (result.success) {
-        showNotification('Item mappings saved!', 'success');
+        showNotification(`${mappings.length} item mappings saved!`, 'success');
         closeModal('itemMappingModal');
     } else {
         showNotification(result.error, 'error');
