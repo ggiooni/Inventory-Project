@@ -39,7 +39,7 @@ jobs:
 
       - name: Install frontend function dependencies
         working-directory: frontend/functions
-        run: npm ci --omit=dev
+        run: npm install --omit=dev
 
       - name: Deploy Firestore Rules
         working-directory: frontend
@@ -81,7 +81,7 @@ jobs:
 
       - name: Install frontend function dependencies
         working-directory: frontend/functions
-        run: npm ci --omit=dev
+        run: npm install --omit=dev
 
       - name: Deploy Firestore Rules
         working-directory: frontend
