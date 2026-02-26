@@ -229,6 +229,19 @@ export function generateShoppingList() {
  * const result = exportAlertsAsCSV();
  * downloadFile(result.content, result.filename, 'text/csv');
  */
+/**
+ * Sanitize a value for CSV export to prevent CSV injection
+ * Prefixes dangerous characters (=, +, -, @, \t, \r) with a single quote
+ */
+function sanitizeCSVField(value) {
+    const str = String(value);
+    const escaped = str.replace(/"/g, '""');
+    if (/^[=+\-@\t\r]/.test(escaped)) {
+        return `"'${escaped}"`;
+    }
+    return `"${escaped}"`;
+}
+
 export function exportAlertsAsCSV() {
     const headers = [
         'Product',
@@ -243,13 +256,13 @@ export function exportAlertsAsCSV() {
     ];
 
     const rows = alertState.alerts.map(alert => [
-        `"${alert.product.name}"`,
-        alert.product.category,
+        sanitizeCSVField(alert.product.name),
+        sanitizeCSVField(alert.product.category),
         alert.product.stock,
         alert.threshold,
-        alert.priority,
-        alert.status.toUpperCase(),
-        `"${alert.message}"`,
+        sanitizeCSVField(alert.priority),
+        sanitizeCSVField(alert.status.toUpperCase()),
+        sanitizeCSVField(alert.message),
         alert.daysUntilEmpty,
         alert.suggestedQuantity
     ].join(','));

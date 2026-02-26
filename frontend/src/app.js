@@ -261,14 +261,14 @@ function setupUIEventListeners() {
     });
 
     // Modal close on outside click
-    window.onclick = (event) => {
+    window.addEventListener('click', (event) => {
         const modals = document.querySelectorAll('.modal-overlay');
         modals.forEach(modal => {
             if (event.target === modal) {
                 modal.classList.remove('show');
             }
         });
-    };
+    });
 }
 
 // =============================================

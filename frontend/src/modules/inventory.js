@@ -30,7 +30,8 @@ import {
     updateDoc,
     onSnapshot,
     setDoc,
-    addDoc
+    addDoc,
+    serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import {
     DEFAULT_PRIORITIES,
@@ -336,7 +337,7 @@ export async function updateStock(itemId, newStock, updatedBy) {
         const itemRef = doc(db, 'inventory', itemId);
         await updateDoc(itemRef, {
             stock: newStock,
-            lastUpdated: new Date(),
+            lastUpdated: serverTimestamp(),
             updatedBy: updatedBy
         });
 
@@ -367,7 +368,7 @@ export async function updatePriority(itemId, priority, threshold, updatedBy) {
         await updateDoc(itemRef, {
             priority: priority,
             alertThreshold: parseInt(threshold),
-            lastUpdated: new Date(),
+            lastUpdated: serverTimestamp(),
             updatedBy: updatedBy
         });
 
@@ -395,7 +396,7 @@ export async function resetToDefaults(updatedBy) {
                 await updateDoc(itemRef, {
                     priority: defaultConfig.priority,
                     alertThreshold: defaultConfig.threshold,
-                    lastUpdated: new Date(),
+                    lastUpdated: serverTimestamp(),
                     updatedBy: updatedBy
                 });
                 return true;

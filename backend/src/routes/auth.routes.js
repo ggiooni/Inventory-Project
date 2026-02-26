@@ -5,23 +5,33 @@
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { login, register, getProfile, logout } = require('../controllers/auth.controller');
 const { verifyToken } = require('../middleware/auth');
 
+// Rate limiting for auth endpoints to prevent brute force attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // max 10 attempts per window
+    message: { success: false, error: 'Too many attempts. Please try again in 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
 /**
  * @route   POST /api/auth/login
  * @desc    Authenticate user and get token
- * @access  Public
+ * @access  Public (rate limited)
  */
-router.post('/login', login);
+router.post('/login', authLimiter, login);
 
 /**
  * @route   POST /api/auth/register
  * @desc    Register new user
- * @access  Public
+ * @access  Public (rate limited)
  */
-router.post('/register', register);
+router.post('/register', authLimiter, register);
 
 /**
  * @route   GET /api/auth/me

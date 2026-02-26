@@ -45,16 +45,30 @@ import { MAX_CONVERSATION_HISTORY, AI_CONFIG } from '../config/constants.js';
  */
 const USE_EMULATOR = false; // Set to true only when running firebase emulators
 
+/**
+ * Derive the Firebase project ID from the local config to avoid hardcoding.
+ * Falls back to a known default if the config cannot be loaded.
+ */
+let PROJECT_ID;
+try {
+    const { firebaseConfig } = await import('../config/firebase-config.local.js');
+    PROJECT_ID = firebaseConfig.projectId;
+} catch {
+    PROJECT_ID = 'bar-inventory-15a15';
+}
+
+const REGION = 'us-central1';
+
 const ENDPOINTS = {
     production: {
-        aiChat: 'https://us-central1-bar-inventory-15a15.cloudfunctions.net/aiChat',
-        predictions: 'https://us-central1-bar-inventory-15a15.cloudfunctions.net/getAIPredictions',
-        shoppingList: 'https://us-central1-bar-inventory-15a15.cloudfunctions.net/generateShoppingList'
+        aiChat: `https://${REGION}-${PROJECT_ID}.cloudfunctions.net/aiChat`,
+        predictions: `https://${REGION}-${PROJECT_ID}.cloudfunctions.net/getAIPredictions`,
+        shoppingList: `https://${REGION}-${PROJECT_ID}.cloudfunctions.net/generateShoppingList`
     },
     development: {
-        aiChat: 'http://localhost:5001/bar-inventory-15a15/us-central1/aiChat',
-        predictions: 'http://localhost:5001/bar-inventory-15a15/us-central1/getAIPredictions',
-        shoppingList: 'http://localhost:5001/bar-inventory-15a15/us-central1/generateShoppingList'
+        aiChat: `http://localhost:5001/${PROJECT_ID}/${REGION}/aiChat`,
+        predictions: `http://localhost:5001/${PROJECT_ID}/${REGION}/getAIPredictions`,
+        shoppingList: `http://localhost:5001/${PROJECT_ID}/${REGION}/generateShoppingList`
     }
 };
 

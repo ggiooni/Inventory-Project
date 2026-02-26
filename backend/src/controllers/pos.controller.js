@@ -4,11 +4,45 @@
  * @author Nicolas Boggioni Troncoso & Fernando Moraes
  */
 
+const crypto = require('crypto');
 const { db } = require('../config/firebase');
 const { POS_SYSTEMS } = require('../config/constants');
 const { ApiError, asyncHandler } = require('../middleware/errorHandler');
 
 const CONFIG_COLLECTION = 'posConfig';
+
+// Encryption helpers for POS API keys
+const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+
+function getEncryptionKey() {
+    const secret = process.env.POS_ENCRYPTION_KEY || process.env.JWT_SECRET;
+    if (!secret) {
+        throw new ApiError(500, 'Encryption key not configured');
+    }
+    return crypto.scryptSync(secret, 'pos-salt', 32);
+}
+
+function encryptApiKey(apiKey) {
+    const key = getEncryptionKey();
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
+    let encrypted = cipher.update(apiKey, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+}
+
+function decryptApiKey(encryptedData) {
+    const key = getEncryptionKey();
+    const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
 
 /**
  * Get POS configuration
@@ -73,7 +107,7 @@ const saveConfig = asyncHandler(async (req, res) => {
 
     const configData = {
         system,
-        apiKey, // In production, encrypt this
+        apiKey: encryptApiKey(apiKey),
         restaurantId,
         syncFrequency: syncFrequency || 'realtime',
         connected: true,

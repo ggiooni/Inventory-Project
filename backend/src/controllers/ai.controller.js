@@ -260,7 +260,8 @@ async function buildInventoryContext() {
         return 'CURRENT INVENTORY: No inventory data available (database not connected).';
     }
 
-    const snapshot = await db.collection('inventory').get();
+    // Limit query to essential fields by fetching only up to 100 items
+    const snapshot = await db.collection('inventory').limit(100).get();
     const items = [];
     const urgentItems = [];
     const lowStockItems = [];
