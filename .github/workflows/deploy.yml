@@ -1,7 +1,9 @@
 name: CD - Deploy to Firebase
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
     branches: [main, master]
   workflow_dispatch:
 
@@ -10,20 +12,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Wait for CI to pass before deploying
-  ci:
-    name: Run CI Pipeline
-    uses: ./.github/workflows/ci.yml
-
   # ──────────────────────────────────────────────
-  # Deploy to Staging (on push to main)
+  # Deploy to Staging (after CI passes)
   # ──────────────────────────────────────────────
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [ci]
     environment: staging
-    if: github.event_name == 'push'
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
@@ -32,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
@@ -74,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
