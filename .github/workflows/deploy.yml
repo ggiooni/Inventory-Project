@@ -35,7 +35,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci --omit=dev
+        run: npm install --omit=dev
 
       - name: Install frontend function dependencies
         working-directory: frontend/functions
@@ -77,7 +77,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci --omit=dev
+        run: npm install --omit=dev
 
       - name: Install frontend function dependencies
         working-directory: frontend/functions
