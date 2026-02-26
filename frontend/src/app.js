@@ -353,16 +353,16 @@ function updateAlertsDisplay() {
         card.className = `alert-card ${alert.status}`;
         card.innerHTML = `
             <h4>
-                ${alert.product.name}
-                <span class="priority-badge ${alert.priority}">${alert.priority}</span>
+                ${escapeHtml(alert.product.name)}
+                <span class="priority-badge ${escapeHtml(alert.priority)}">${escapeHtml(alert.priority)}</span>
             </h4>
-            <p><strong>Stock:</strong> ${alert.product.stock} units</p>
-            <p><strong>Threshold:</strong> ${alert.threshold} units</p>
-            <p><strong>Status:</strong> ${alert.message}</p>
-            <p><strong>Est. Days:</strong> ${alert.daysUntilEmpty} days until empty</p>
+            <p><strong>Stock:</strong> ${Number(alert.product.stock)} units</p>
+            <p><strong>Threshold:</strong> ${Number(alert.threshold)} units</p>
+            <p><strong>Status:</strong> ${escapeHtml(alert.message)}</p>
+            <p><strong>Est. Days:</strong> ${Number(alert.daysUntilEmpty)} days until empty</p>
             <div class="alert-actions">
-                <button class="alert-btn" onclick="quickRestock('${alert.product.id}')">Quick Restock</button>
-                <button class="alert-btn" onclick="updatePriorityModal('${alert.product.id}')">Adjust Priority</button>
+                <button class="alert-btn" onclick="quickRestock('${escapeHtml(alert.product.id)}')">Quick Restock</button>
+                <button class="alert-btn" onclick="updatePriorityModal('${escapeHtml(alert.product.id)}')">Adjust Priority</button>
             </div>
         `;
         alertsGrid.appendChild(card);
@@ -460,9 +460,12 @@ function renderInventoryTable() {
  * Create table row HTML
  */
 function createTableRow(item, stockInfo, config, rowClass) {
+    const safeId = escapeHtml(item.id);
+    const safeName = escapeHtml(item.name);
+    const safeStock = Number(item.stock);
     const stockControls = `
-        <button class="btn btn-icon btn-secondary" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'subtract')" title="Remove stock">&#10134;</button>
-        <button class="btn btn-icon btn-success" onclick="quickUpdate('${item.id}', '${item.name}', ${item.stock}, 'add')" title="Add stock">&#10133;</button>
+        <button class="btn btn-icon btn-secondary" onclick="quickUpdate('${safeId}', '${safeName}', ${safeStock}, 'subtract')" title="Remove stock">&#10134;</button>
+        <button class="btn btn-icon btn-success" onclick="quickUpdate('${safeId}', '${safeName}', ${safeStock}, 'add')" title="Add stock">&#10133;</button>
     `;
 
     let priorityControls = ''; // eslint-disable-line no-useless-assignment
@@ -496,11 +499,11 @@ function createTableRow(item, stockInfo, config, rowClass) {
         <tr class="${rowClass}">
             <td>
                 <div class="product-info">
-                    <span class="product-name">${item.name}</span>
-                    <span class="product-category">${item.category}</span>
+                    <span class="product-name">${escapeHtml(item.name)}</span>
+                    <span class="product-category">${escapeHtml(item.category)}</span>
                 </div>
             </td>
-            <td>${item.category}</td>
+            <td>${escapeHtml(item.category)}</td>
             <td>${posMapping}</td>
             <td>
                 <div class="stock-status">
@@ -523,8 +526,8 @@ function createMobileCard(item, stockInfo, config, rowClass) {
         <div class="inventory-card ${rowClass}">
             <div class="inventory-card-header">
                 <div>
-                    <div class="inventory-card-title">${item.name}</div>
-                    <div class="inventory-card-category">${item.category}</div>
+                    <div class="inventory-card-title">${escapeHtml(item.name)}</div>
+                    <div class="inventory-card-category">${escapeHtml(item.category)}</div>
                 </div>
                 <div class="inventory-card-status">
                     <div class="status-indicator ${stockInfo.status}"></div>

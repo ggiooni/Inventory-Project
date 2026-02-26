@@ -50,6 +50,28 @@ If you don't have enough data, say so and suggest what information would help.
 Respond in the same language the user writes in (English or Spanish).`;
 
 /**
+ * Verify Firebase Authentication token from request header.
+ * Returns the decoded user or null if invalid.
+ *
+ * @param {Object} request - HTTP request object
+ * @returns {Object|null} Decoded user token or null
+ */
+async function verifyAuth(request) {
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return null;
+    }
+    try {
+        const idToken = authHeader.split('Bearer ')[1];
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        return decodedToken;
+    } catch (error) {
+        console.error('Auth verification failed:', error.message);
+        return null;
+    }
+}
+
+/**
  * Cloud Function: AI Chat Proxy
  *
  * Securely proxies requests to Groq API without exposing the API key.
@@ -64,6 +86,13 @@ exports.aiChat = functions.https.onRequest((request, response) => {
         // Only allow POST requests
         if (request.method !== 'POST') {
             response.status(405).json({ error: 'Method not allowed' });
+            return;
+        }
+
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user) {
+            response.status(401).json({ error: 'Authentication required' });
             return;
         }
 
@@ -157,6 +186,13 @@ exports.getAIPredictions = functions.https.onRequest((request, response) => {
             return;
         }
 
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user) {
+            response.status(401).json({ error: 'Authentication required' });
+            return;
+        }
+
         try {
             const { inventoryData } = request.body;
             const apiKey = functions.config().groq?.apikey;
@@ -225,6 +261,13 @@ exports.generateShoppingList = functions.https.onRequest((request, response) => 
     corsHandler(request, response, async () => {
         if (request.method !== 'POST') {
             response.status(405).json({ error: 'Method not allowed' });
+            return;
+        }
+
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user) {
+            response.status(401).json({ error: 'Authentication required' });
             return;
         }
 

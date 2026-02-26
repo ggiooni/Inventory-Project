@@ -562,6 +562,12 @@
         }
 
         // Toast Notifications
+        function escapeHtmlToast(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         function showToast(message, type = 'info', title = '') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -574,11 +580,14 @@
                 info: '&#8505;'
             };
 
+            const safeMessage = escapeHtmlToast(message);
+            const safeTitle = title ? escapeHtmlToast(title) : '';
+
             toast.innerHTML = `
                 <span class="toast-icon">${icons[type] || icons.info}</span>
                 <div class="toast-content">
-                    ${title ? `<div class="toast-title">${title}</div>` : ''}
-                    <div class="toast-message">${message}</div>
+                    ${safeTitle ? `<div class="toast-title">${safeTitle}</div>` : ''}
+                    <div class="toast-message">${safeMessage}</div>
                 </div>
                 <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
             `;

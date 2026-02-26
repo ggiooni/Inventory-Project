@@ -29,9 +29,9 @@ const login = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Email and password are required');
     }
 
-    // Check demo users first (for development)
+    // Check demo users (ONLY in development/test environments)
     const demoUser = DEMO_USERS[email.toLowerCase()];
-    if (demoUser && password === demoUser.password) {
+    if (demoUser && password === demoUser.password && process.env.NODE_ENV !== 'production') {
         const token = generateToken(email, demoUser.role);
 
         return res.json({
@@ -86,7 +86,7 @@ const login = asyncHandler(async (req, res) => {
  * POST /api/auth/register
  */
 const register = asyncHandler(async (req, res) => {
-    const { email, password, displayName, role = USER_ROLES.STAFF } = req.body;
+    const { email, password, displayName } = req.body;
 
     // Validate input
     if (!email || !password) {
@@ -113,19 +113,20 @@ const register = asyncHandler(async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user - role is always STAFF for self-registration.
+    // Only an admin can promote users to higher roles.
     const newUser = {
         email: email.toLowerCase(),
         password: hashedPassword,
         displayName: displayName || email.split('@')[0],
-        role: role,
+        role: USER_ROLES.STAFF,
         createdAt: new Date().toISOString()
     };
 
     const docRef = await usersRef.add(newUser);
 
     // Generate token
-    const token = generateToken(email, role);
+    const token = generateToken(email, USER_ROLES.STAFF);
 
     res.status(201).json({
         success: true,
@@ -175,9 +176,12 @@ const logout = asyncHandler(async (req, res) => {
  * Generate JWT token
  */
 function generateToken(email, role) {
+    if (!process.env.JWT_SECRET) {
+        throw new ApiError(500, 'JWT_SECRET environment variable is not configured');
+    }
     return jwt.sign(
         { email, role },
-        process.env.JWT_SECRET || 'your-secret-key',
+        process.env.JWT_SECRET,
         { expiresIn: JWT_CONFIG.EXPIRES_IN }
     );
 }
