@@ -32,6 +32,7 @@ function encryptApiKey(apiKey) {
     return `${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
+// eslint-disable-next-line no-unused-vars -- will be used when POS sync calls external API
 function decryptApiKey(encryptedData) {
     const key = getEncryptionKey();
     const [ivHex, authTagHex, encrypted] = encryptedData.split(':');

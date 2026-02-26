@@ -31,12 +31,10 @@
 // =============================================
 
 // Configuration
-import { db, auth } from './config/firebase.js';
 import {
     TOAST_DURATION,
     ERROR_MESSAGES,
-    SUCCESS_MESSAGES,
-    MAX_VISIBLE_ALERTS
+    SUCCESS_MESSAGES
 } from './config/constants.js';
 
 // Authentication Module
@@ -47,9 +45,7 @@ import {
     canModifyStock,
     canManageProducts,
     canManagePriorities,
-    getCurrentUser,
-    getUserRole,
-    getUserDisplayInfo
+    getCurrentUser
 } from './modules/auth.js';
 
 // Inventory Module
@@ -58,7 +54,6 @@ import {
     setupRealtimeListener,
     getInventoryItems,
     getFilteredItems,
-    getItemById,
     getProductPriority,
     calculateStockStatus,
     calculateStats,
@@ -73,7 +68,6 @@ import {
 // Alerts Module
 import {
     generateAlerts,
-    getAlerts,
     getAlertCounts,
     getDisplayAlerts,
     getHiddenAlertCount,
@@ -98,9 +92,7 @@ import {
 // AI Assistant Service
 import {
     sendToGroq,
-    generateAIShoppingList,
-    getInventoryInsights,
-    clearAIConversation
+    generateAIShoppingList
 } from './services/ai-assistant.js';
 
 // =============================================
@@ -148,7 +140,7 @@ function initializeApp() {
  * @param {Object} authData - Authentication data
  */
 async function handleAuthSuccess(authData) {
-    const { user, role, displayName } = authData;
+    const { role, displayName } = authData;
 
     // Update UI with user info
     updateUserDisplay(displayName, role);
@@ -177,7 +169,7 @@ async function handleAuthSuccess(authData) {
             updateStatsDisplay();
             renderInventoryTable();
         },
-        (error) => showNotification('Connection error', 'error')
+        (_error) => showNotification('Connection error', 'error')
     );
 
     await loadPOSConfig();
@@ -208,19 +200,19 @@ function handleAuthFailure() {
  */
 function setupModuleListeners() {
     // When inventory changes, regenerate alerts and update UI
-    onInventoryChange((items, filtered) => {
+    onInventoryChange(() => {
         generateAlerts();
         updateStatsDisplay();
         renderInventoryTable();
     });
 
     // When alerts change, update alerts display
-    onAlertsChange((alerts, counts) => {
+    onAlertsChange(() => {
         updateAlertsDisplay();
     });
 
     // When POS config changes, update POS display
-    onPOSChange((config) => {
+    onPOSChange(() => {
         updatePOSDisplay();
     });
 }

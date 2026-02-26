@@ -31,7 +31,6 @@ import {
     setDoc
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { POS_SYSTEMS, SYNC_FREQUENCIES } from '../config/constants.js';
-import { getInventoryItems } from './inventory.js';
 
 // =============================================
 // MODULE STATE

@@ -28,7 +28,7 @@
  * @see {@link https://firebase.google.com/docs/functions} - Cloud Functions
  */
 
-import { MAX_CONVERSATION_HISTORY, AI_CONFIG } from '../config/constants.js';
+import { MAX_CONVERSATION_HISTORY } from '../config/constants.js';
 
 // =============================================
 // CONFIGURATION

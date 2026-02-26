@@ -295,7 +295,7 @@ const getStats = asyncHandler(async (req, res) => {
 
     const snapshot = await db.collection(COLLECTION).get();
 
-    let stats = {
+    const stats = {
         total: 0,
         urgent: 0,
         lowStock: 0,
