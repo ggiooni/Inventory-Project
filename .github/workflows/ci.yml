@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, develop]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,11 +21,8 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check for changes
-        uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -35,186 +32,156 @@ jobs:
               - 'frontend/**'
 
   # ──────────────────────────────────────────────
-  # Backend: Lint
+  # Backend: Lint + Test (parallel)
   # ──────────────────────────────────────────────
   lint-backend:
     name: Lint Backend
     runs-on: ubuntu-latest
-    needs: [changes]
+    needs: changes
     if: needs.changes.outputs.backend == 'true'
     defaults:
       run:
         working-directory: backend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
           cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-  # ──────────────────────────────────────────────
-  # Backend: Tests
-  # ──────────────────────────────────────────────
   test-backend:
-    name: Backend Tests (Jest)
+    name: Test Backend
     runs-on: ubuntu-latest
-    needs: [lint-backend]
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     defaults:
       run:
         working-directory: backend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
           cache-dependency-path: backend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
+      - run: npm ci
+      - run: npm run test:coverage
         env:
           JWT_SECRET: test-secret-for-ci
           NODE_ENV: test
-
-      - name: Upload backend coverage
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-coverage
           path: backend/coverage
-          retention-days: 14
+          retention-days: 7
 
   # ──────────────────────────────────────────────
-  # Frontend: Lint
+  # Frontend: Lint + Test (parallel)
   # ──────────────────────────────────────────────
   lint-frontend:
     name: Lint Frontend
     runs-on: ubuntu-latest
-    needs: [changes]
+    needs: changes
     if: needs.changes.outputs.frontend == 'true'
     defaults:
       run:
         working-directory: frontend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-  # ──────────────────────────────────────────────
-  # Frontend: Tests
-  # ──────────────────────────────────────────────
   test-frontend:
-    name: Frontend Tests (Vitest)
+    name: Test Frontend
     runs-on: ubuntu-latest
-    needs: [lint-frontend]
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     defaults:
       run:
         working-directory: frontend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
-
-      - name: Upload frontend coverage
-        uses: actions/upload-artifact@v4
+      - run: npm ci
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
           path: frontend/coverage
-          retention-days: 14
+          retention-days: 7
 
   # ──────────────────────────────────────────────
-  # Security Audit
+  # Security: Dependency audit
   # ──────────────────────────────────────────────
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Audit backend dependencies
+          node-version: '22'
+      - name: Audit backend
         working-directory: backend
-        run: npm audit --audit-level=high || true
-
-      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+        continue-on-error: true
+        id: audit-backend
+      - name: Audit frontend
         working-directory: frontend
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
+        continue-on-error: true
+        id: audit-frontend
+      - name: Report audit results
+        if: steps.audit-backend.outcome == 'failure' || steps.audit-frontend.outcome == 'failure'
+        run: |
+          echo "::warning::Security vulnerabilities found - review npm audit output above"
 
   # ──────────────────────────────────────────────
-  # Gate: All checks must pass
+  # Gate: All required checks must pass
   # ──────────────────────────────────────────────
   ci-passed:
     name: CI Passed
     runs-on: ubuntu-latest
-    needs: [changes, test-backend, test-frontend, security-audit]
     if: always()
-
+    needs: [changes, lint-backend, test-backend, lint-frontend, test-frontend, security-audit]
     steps:
-      - name: Verify all checks passed
+      - name: Verify results
         run: |
-          # Backend checks: must pass if backend changed, skip is OK if no changes
-          backend_changed="${{ needs.changes.outputs.backend }}"
-          if [ "$backend_changed" == "true" ]; then
+          echo "Backend changed: ${{ needs.changes.outputs.backend }}"
+          echo "Frontend changed: ${{ needs.changes.outputs.frontend }}"
+
+          # Check backend (required only if changed)
+          if [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
+            if [ "${{ needs.lint-backend.result }}" != "success" ]; then
+              echo "::error::Backend lint failed"
+              exit 1
+            fi
             if [ "${{ needs.test-backend.result }}" != "success" ]; then
               echo "::error::Backend tests failed"
               exit 1
             fi
           fi
 
-          # Frontend checks: must pass if frontend changed, skip is OK if no changes
-          frontend_changed="${{ needs.changes.outputs.frontend }}"
-          if [ "$frontend_changed" == "true" ]; then
+          # Check frontend (required only if changed)
+          if [ "${{ needs.changes.outputs.frontend }}" == "true" ]; then
+            if [ "${{ needs.lint-frontend.result }}" != "success" ]; then
+              echo "::error::Frontend lint failed"
+              exit 1
+            fi
             if [ "${{ needs.test-frontend.result }}" != "success" ]; then
               echo "::error::Frontend tests failed"
               exit 1
