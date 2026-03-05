@@ -29,14 +29,21 @@ inventory-project/
 
 ---
 
+## Prerequisites
+
+- Node.js 22+ (LTS)
+- npm 10+
+- Firebase project configured
+
 ## Quick Start
 
 ### Frontend (Web App)
 
 ```bash
 cd frontend
-python -m http.server 8000
-# Open http://localhost:8000
+npm install
+npx serve .
+# Open http://localhost:3000
 ```
 
 ### Backend (API)
@@ -57,12 +64,14 @@ npm run dev
 ### Frontend
 - HTML5, CSS3, JavaScript (ES6+)
 - Firebase SDK (Authentication, Firestore)
+- Vitest (Testing)
 
 ### Backend
 - Node.js + Express
 - Firebase Admin SDK
 - JWT Authentication
 - Groq API (AI/LLM)
+- Jest (Testing)
 
 ### Mobile (In Development)
 - React Native
@@ -133,6 +142,37 @@ See [backend/README.md](./backend/README.md) for full API documentation.
 │  └───────────────────────────────────────────────────────────┘  │
 │                         SERVER                                   │
 └──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### CI Pipeline (`ci.yml`)
+- **Change detection** - Only runs jobs for modified services (backend/frontend)
+- **Lint + Test in parallel** - ESLint and test suites run concurrently per service
+- **Coverage reports** - Uploaded as artifacts on every run
+- **Security audit** - Dependency vulnerability scanning
+- **Gate job** - All checks must pass before merge
+
+### CD Pipeline (`deploy.yml`)
+- **Staging** - Auto-deploys to Firebase after CI passes on `main`
+- **Production** - Requires manual approval via GitHub environment protection rules
+- Deploys Firestore rules + Firebase Hosting
+
+### Running Tests Locally
+
+```bash
+# Backend
+cd backend && npm test
+
+# Frontend
+cd frontend && npm test
+
+# With coverage
+npm run test:coverage
 ```
 
 ---
