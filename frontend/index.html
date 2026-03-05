@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- LOGIN SCREEN -->
@@ -644,14 +644,28 @@
             const tooltip = document.getElementById('tourTooltip');
 
             if (element) {
-                const rect = element.getBoundingClientRect();
-                highlight.style.top = rect.top - 8 + 'px';
-                highlight.style.left = rect.left - 8 + 'px';
-                highlight.style.width = rect.width + 16 + 'px';
-                highlight.style.height = rect.height + 16 + 'px';
+                // Scroll element into view first, then position after scroll completes
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                tooltip.style.top = rect.bottom + 20 + 'px';
-                tooltip.style.left = Math.max(20, rect.left) + 'px';
+                setTimeout(() => {
+                    const rect = element.getBoundingClientRect();
+                    const pad = 8;
+
+                    highlight.style.top = rect.top - pad + 'px';
+                    highlight.style.left = rect.left - pad + 'px';
+                    highlight.style.width = rect.width + pad * 2 + 'px';
+                    highlight.style.height = rect.height + pad * 2 + 'px';
+
+                    // Position tooltip: prefer below, but flip above if no room
+                    const tooltipHeight = 180;
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    if (spaceBelow > tooltipHeight + 30) {
+                        tooltip.style.top = rect.bottom + 16 + 'px';
+                    } else {
+                        tooltip.style.top = Math.max(16, rect.top - tooltipHeight - 16) + 'px';
+                    }
+                    tooltip.style.left = Math.max(16, Math.min(rect.left, window.innerWidth - 380)) + 'px';
+                }, 400);
             }
 
             document.getElementById('tourTitle').textContent = step.title;
