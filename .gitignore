@@ -58,3 +58,27 @@ mobile/android/.gradle/
 mobile/android/app/build/
 *.apk
 *.ipa
+
+# =========================
+# Android Studio / Kotlin
+# =========================
+
+.gradle/
+local.properties
+.idea/
+*.iml
+
+# Android build outputs
+**/build/
+app/build/
+
+# Generated APKs
+*.apk
+*.aab
+
+# Android Studio captures
+captures/
+
+# NDK
+.externalNativeBuild
+.cxx
