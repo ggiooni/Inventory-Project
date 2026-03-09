@@ -89,6 +89,18 @@ import {
     onPOSChange
 } from './modules/pos-integration.js';
 
+// Recipes Module
+import {
+    loadRecipes,
+    createRecipe,
+    updateRecipe,
+    deleteRecipe,
+    getRecipes,
+    getRecipeById,
+    getRecipeCategories,
+    onRecipesChange
+} from './modules/recipes.js';
+
 // AI Assistant Service
 import {
     sendToGroq,
@@ -173,6 +185,8 @@ async function handleAuthSuccess(authData) {
     );
 
     await loadPOSConfig();
+    await loadRecipes();
+    renderRecipesPanel();
 
     showNotification(SUCCESS_MESSAGES.LOGIN(displayName), 'success');
 
@@ -214,6 +228,11 @@ function setupModuleListeners() {
     // When POS config changes, update POS display
     onPOSChange(() => {
         updatePOSDisplay();
+    });
+
+    // When recipes change, update recipes display
+    onRecipesChange(() => {
+        renderRecipesPanel();
     });
 }
 
@@ -289,6 +308,7 @@ function updateUserDisplay(displayName, role) {
 function updateUIPermissions(role) {
     const priorityPanel = document.getElementById('priorityPanel');
     const adminSection = document.getElementById('adminSection');
+    const recipesPanel = document.getElementById('recipesPanel');
 
     const isAdmin = role === 'admin';
 
@@ -297,6 +317,9 @@ function updateUIPermissions(role) {
     }
     if (adminSection) {
         adminSection.style.display = isAdmin ? 'block' : 'none';
+    }
+    if (recipesPanel) {
+        recipesPanel.style.display = isAdmin ? 'block' : 'none';
     }
 }
 
@@ -987,6 +1010,238 @@ window.saveItemMappings = async function() {
 // Modal Functions
 window.closeModal = function(modalId) {
     document.getElementById(modalId).classList.remove('show');
+};
+
+// =============================================
+// RECIPES FUNCTIONS
+// =============================================
+
+/**
+ * Render the recipes panel with all recipes as cards
+ */
+function renderRecipesPanel() {
+    const grid = document.getElementById('recipesGrid');
+    const categoryFilter = document.getElementById('recipeCategoryFilter');
+    if (!grid) return;
+
+    const allRecipes = getRecipes();
+    const searchTerm = document.getElementById('recipeSearchInput')?.value?.toLowerCase() || '';
+    const categoryValue = document.getElementById('recipeCategoryFilter')?.value || '';
+
+    // Update category filter options
+    if (categoryFilter) {
+        const categories = getRecipeCategories();
+        const currentVal = categoryFilter.value;
+        categoryFilter.innerHTML = '<option value="">All Categories</option>' +
+            categories.map(c => `<option value="${escapeHtml(c)}"${c === currentVal ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('');
+    }
+
+    // Filter recipes
+    let filtered = allRecipes;
+    if (searchTerm) {
+        filtered = filtered.filter(r => r.name.toLowerCase().includes(searchTerm));
+    }
+    if (categoryValue) {
+        filtered = filtered.filter(r => r.category === categoryValue);
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                <h3>${allRecipes.length === 0 ? 'No recipes yet' : 'No recipes match your search'}</h3>
+                <p>${allRecipes.length === 0 ? 'Click "+ New Recipe" to create your first recipe.' : 'Try a different search term or category.'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = filtered.map(recipe => `
+        <div class="recipe-card" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                    <h4 style="margin: 0; color: var(--text-primary);">${escapeHtml(recipe.name)}</h4>
+                    <span class="priority-badge medium" style="margin-top: 4px; display: inline-block;">${escapeHtml(recipe.category)}</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-small btn-secondary" onclick="openEditRecipeModal('${escapeHtml(recipe.id)}')" title="Edit">&#9998;</button>
+                    <button class="btn btn-small btn-secondary" onclick="deleteRecipeAction('${escapeHtml(recipe.id)}', '${escapeHtml(recipe.name)}')" title="Delete" style="color: var(--danger);">&#128465;</button>
+                </div>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.9em;">
+                <strong>Ingredients (${recipe.ingredients.length}):</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px; list-style: disc;">
+                    ${recipe.ingredients.map(ing => `<li>${escapeHtml(ing.name)} - ${ing.quantity} ${escapeHtml(ing.unit)}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.filterRecipes = function() {
+    renderRecipesPanel();
+};
+
+window.openCreateRecipeModal = function() {
+    if (!canManagePriorities()) {
+        showNotification('Admin access required', 'error');
+        return;
+    }
+
+    document.getElementById('recipeEditId').value = '';
+    document.getElementById('recipeName').value = '';
+    document.getElementById('recipeCategory').value = '';
+    document.getElementById('recipeIngredientsList').innerHTML = '';
+    document.getElementById('recipeModalTitle').innerHTML = '&#128214; New Recipe';
+    document.getElementById('recipeSubmitBtn').textContent = 'Create Recipe';
+
+    // Add one empty ingredient row
+    addRecipeIngredientRow();
+
+    document.getElementById('recipeModal').classList.add('show');
+};
+
+window.openEditRecipeModal = function(recipeId) {
+    if (!canManagePriorities()) {
+        showNotification('Admin access required', 'error');
+        return;
+    }
+
+    const recipe = getRecipeById(recipeId);
+    if (!recipe) {
+        showNotification('Recipe not found', 'error');
+        return;
+    }
+
+    document.getElementById('recipeEditId').value = recipeId;
+    document.getElementById('recipeName').value = recipe.name;
+    document.getElementById('recipeCategory').value = recipe.category;
+    document.getElementById('recipeModalTitle').innerHTML = '&#9998; Edit Recipe';
+    document.getElementById('recipeSubmitBtn').textContent = 'Save Changes';
+
+    // Populate ingredients
+    const list = document.getElementById('recipeIngredientsList');
+    list.innerHTML = '';
+
+    recipe.ingredients.forEach(ing => {
+        addRecipeIngredientRow(ing);
+    });
+
+    document.getElementById('recipeModal').classList.add('show');
+};
+
+window.addRecipeIngredientRow = function(ingredient = null) {
+    const list = document.getElementById('recipeIngredientsList');
+    const inventoryItems = getInventoryItems();
+
+    const row = document.createElement('div');
+    row.className = 'recipe-ingredient-row';
+    row.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;';
+
+    const selectedId = ingredient?.inventoryItemId || '';
+    const selectedQty = ingredient?.quantity || '';
+    const selectedUnit = ingredient?.unit || 'ml';
+
+    row.innerHTML = `
+        <select class="filter-select recipe-inv-select" style="flex: 2; min-width: 150px;">
+            <option value="">Select inventory item...</option>
+            ${inventoryItems.map(item => `<option value="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}" ${item.id === selectedId ? 'selected' : ''}>${escapeHtml(item.name)} (${escapeHtml(item.category)})</option>`).join('')}
+        </select>
+        <input type="number" class="recipe-qty-input" placeholder="Qty" value="${selectedQty}" min="0.1" step="0.1" style="flex: 0.7; min-width: 70px;">
+        <select class="filter-select recipe-unit-select" style="flex: 0.7; min-width: 70px;">
+            <option value="ml" ${selectedUnit === 'ml' ? 'selected' : ''}>ml</option>
+            <option value="oz" ${selectedUnit === 'oz' ? 'selected' : ''}>oz</option>
+            <option value="cl" ${selectedUnit === 'cl' ? 'selected' : ''}>cl</option>
+            <option value="units" ${selectedUnit === 'units' ? 'selected' : ''}>units</option>
+            <option value="g" ${selectedUnit === 'g' ? 'selected' : ''}>g</option>
+            <option value="dashes" ${selectedUnit === 'dashes' ? 'selected' : ''}>dashes</option>
+        </select>
+        <button class="btn btn-small btn-secondary" onclick="this.parentElement.remove()" style="color: var(--danger);" title="Remove">&times;</button>
+    `;
+
+    list.appendChild(row);
+};
+
+window.submitRecipe = async function() {
+    if (!canManagePriorities()) {
+        showNotification('Admin access required', 'error');
+        return;
+    }
+
+    const editId = document.getElementById('recipeEditId').value;
+    const name = document.getElementById('recipeName').value.trim();
+    const category = document.getElementById('recipeCategory').value.trim();
+
+    if (!name || !category) {
+        showNotification('Recipe name and category are required', 'warning');
+        return;
+    }
+
+    // Collect ingredients
+    const rows = document.querySelectorAll('#recipeIngredientsList .recipe-ingredient-row');
+    const ingredients = [];
+
+    for (const row of rows) {
+        const select = row.querySelector('.recipe-inv-select');
+        const qty = row.querySelector('.recipe-qty-input');
+        const unit = row.querySelector('.recipe-unit-select');
+
+        const itemId = select.value;
+        const itemName = select.selectedOptions[0]?.dataset?.name || '';
+        const quantity = parseFloat(qty.value);
+
+        if (!itemId) continue;
+
+        if (!quantity || quantity <= 0) {
+            showNotification(`Please enter a valid quantity for ${itemName || 'the ingredient'}`, 'warning');
+            return;
+        }
+
+        ingredients.push({
+            inventoryItemId: itemId,
+            name: itemName,
+            quantity: quantity,
+            unit: unit.value
+        });
+    }
+
+    if (ingredients.length === 0) {
+        showNotification('At least one ingredient is required', 'warning');
+        return;
+    }
+
+    const user = getCurrentUser();
+    const recipeData = { name, category, ingredients };
+
+    let result;
+    if (editId) {
+        result = await updateRecipe(editId, recipeData, user.email);
+    } else {
+        result = await createRecipe(recipeData, user.email);
+    }
+
+    if (result.success) {
+        showNotification(editId ? 'Recipe updated successfully!' : 'Recipe created successfully!', 'success');
+        closeModal('recipeModal');
+    } else {
+        showNotification(result.error || 'Error saving recipe', 'error');
+    }
+};
+
+window.deleteRecipeAction = async function(recipeId, recipeName) {
+    if (!canManagePriorities()) {
+        showNotification('Admin access required', 'error');
+        return;
+    }
+
+    if (!confirm(`Delete recipe "${recipeName}"? This cannot be undone.`)) return;
+
+    const result = await deleteRecipe(recipeId);
+
+    if (result.success) {
+        showNotification(`Recipe "${recipeName}" deleted`, 'success');
+    } else {
+        showNotification(result.error || 'Error deleting recipe', 'error');
+    }
 };
 
 // AI Functions

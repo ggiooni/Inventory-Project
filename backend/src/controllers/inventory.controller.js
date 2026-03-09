@@ -364,12 +364,14 @@ function calculateStockStatus(item) {
  */
 function getMockInventory() {
     return [
-        { id: '1', name: 'Absolut Vodka', category: 'Spirits', stock: 5, priority: 'high', alertThreshold: 2 },
-        { id: '2', name: 'Jack Daniels', category: 'Spirits', stock: 3, priority: 'high', alertThreshold: 2 },
-        { id: '3', name: 'Cabernet Sauvignon', category: 'Wines', stock: 8, priority: 'medium', alertThreshold: 3 },
-        { id: '4', name: 'Corona Beer', category: 'Beers', stock: 24, priority: 'medium', alertThreshold: 6 },
-        { id: '5', name: 'Coca Cola', category: 'Soft Drinks', stock: 36, priority: 'low', alertThreshold: 12 },
-        { id: '6', name: 'Simple Syrup', category: 'Syrups', stock: 2, priority: 'medium', alertThreshold: 2 }
+        { id: '1', name: 'Tequila', category: 'Spirits', stock: 5, priority: 'high', alertThreshold: 2 },
+        { id: '2', name: 'Vodka', category: 'Spirits', stock: 5, priority: 'high', alertThreshold: 2 },
+        { id: '3', name: 'Gin', category: 'Spirits', stock: 5, priority: 'high', alertThreshold: 2 },
+        { id: '4', name: 'Vino Chileno Merlot', category: 'Wines', stock: 5, priority: 'medium', alertThreshold: 3 },
+        { id: '5', name: 'Guinness Keg 30L', category: 'Beers', stock: 1, priority: 'medium', alertThreshold: 1 },
+        { id: '6', name: 'Lime Juice', category: 'Syrups', stock: 5, priority: 'medium', alertThreshold: 2 },
+        { id: '7', name: 'Eggs', category: 'Syrups', stock: 5, priority: 'medium', alertThreshold: 2 },
+        { id: '8', name: 'Sugar Syrup', category: 'Syrups', stock: 5, priority: 'medium', alertThreshold: 2 }
     ];
 }
 

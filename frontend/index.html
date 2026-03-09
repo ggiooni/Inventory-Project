@@ -70,6 +70,10 @@
 
                 <div class="nav-section" id="adminSection" style="display: none;">
                     <div class="nav-section-title">Administration</div>
+                    <a class="nav-item" data-section="recipes" onclick="navigateTo('recipes')">
+                        <span class="nav-item-icon">&#128214;</span>
+                        <span class="nav-item-text">Recipes</span>
+                    </a>
                     <a class="nav-item" data-section="settings" onclick="navigateTo('settings')">
                         <span class="nav-item-icon">&#9881;</span>
                         <span class="nav-item-text">Settings</span>
@@ -293,6 +297,31 @@
                     </div>
                 </section>
 
+                <!-- RECIPES MANAGEMENT (Admin Only) -->
+                <section class="panel" id="recipesPanel" style="display: none;">
+                    <div class="panel-header" onclick="togglePanel('recipesPanel')">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">&#128214;</span>
+                            <span class="panel-title">Recipe Management (Admin)</span>
+                        </div>
+                        <div class="panel-header-right">
+                            <button class="btn btn-small btn-primary" onclick="event.stopPropagation(); openCreateRecipeModal()">+ New Recipe</button>
+                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="recipes-filter-row" style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <input type="text" id="recipeSearchInput" class="search-input" placeholder="Search recipes..." style="flex: 1; min-width: 200px;" oninput="filterRecipes()">
+                            <select id="recipeCategoryFilter" class="filter-select" onchange="filterRecipes()">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                        <div class="recipes-grid" id="recipesGrid">
+                            <!-- Recipes loaded dynamically -->
+                        </div>
+                    </div>
+                </section>
+
                 <!-- SEARCH AND FILTERS -->
                 <section class="search-filter-bar" id="searchSection">
                     <div class="search-input-wrapper">
@@ -472,6 +501,46 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('bulkUpdateModal')">Cancel</button>
                 <button class="btn btn-warning" onclick="confirmBulkUpdate()">Update All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Create/Edit Modal -->
+    <div class="modal-overlay" id="recipeModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="recipeModalTitle">&#128214; New Recipe</h3>
+                <button class="modal-close" onclick="closeModal('recipeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="recipeEditId" value="">
+                <div class="form-group">
+                    <label>Recipe Name</label>
+                    <input type="text" id="recipeName" placeholder="e.g. Margarita, Mojito, Old Fashioned...">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="recipeCategory" placeholder="e.g. Cocktails, Shots, Mocktails..." list="recipeCategorySuggestions">
+                    <datalist id="recipeCategorySuggestions">
+                        <option value="Cocktails">
+                        <option value="Shots">
+                        <option value="Mocktails">
+                        <option value="Hot Drinks">
+                        <option value="Beer Mixes">
+                        <option value="Wine Cocktails">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Ingredients</label>
+                    <div id="recipeIngredientsList">
+                        <!-- Ingredient rows added dynamically -->
+                    </div>
+                    <button class="btn btn-secondary" onclick="addRecipeIngredientRow()" style="margin-top: 8px;">+ Add Ingredient</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('recipeModal')">Cancel</button>
+                <button class="btn btn-primary" id="recipeSubmitBtn" onclick="submitRecipe()">Create Recipe</button>
             </div>
         </div>
     </div>

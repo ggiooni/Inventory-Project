@@ -19,6 +19,7 @@ const inventoryRoutes = require('./routes/inventory.routes');
 const alertsRoutes = require('./routes/alerts.routes');
 const aiRoutes = require('./routes/ai.routes');
 const posRoutes = require('./routes/pos.routes');
+const recipesRoutes = require('./routes/recipes.routes');
 
 // Import middleware
 const { errorHandler } = require('./middleware/errorHandler');
@@ -68,6 +69,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/pos', posRoutes);
+app.use('/api/recipes', recipesRoutes);
 
 // 404 handler - must be after all routes, before error handler
 app.use((req, res, _next) => {
