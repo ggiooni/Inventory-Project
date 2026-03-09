@@ -13,6 +13,7 @@
     "ignore": [
       "firebase.json",
       "**/.*",
+      "!**/firebase-config.local.js",
       "**/node_modules/**",
       "functions/**",
       "README.md",

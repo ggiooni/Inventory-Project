@@ -1095,7 +1095,7 @@ window.openCreateRecipeModal = function() {
     document.getElementById('recipeSubmitBtn').textContent = 'Create Recipe';
 
     // Add one empty ingredient row
-    addRecipeIngredientRow();
+    window.addRecipeIngredientRow();
 
     document.getElementById('recipeModal').classList.add('show');
 };
@@ -1123,7 +1123,7 @@ window.openEditRecipeModal = function(recipeId) {
     list.innerHTML = '';
 
     recipe.ingredients.forEach(ing => {
-        addRecipeIngredientRow(ing);
+        window.addRecipeIngredientRow(ing);
     });
 
     document.getElementById('recipeModal').classList.add('show');

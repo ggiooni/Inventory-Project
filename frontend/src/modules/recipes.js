@@ -11,7 +11,7 @@ import { db } from '../config/firebase.js';
 // =============================================
 
 let recipes = [];
-let changeListeners = [];
+const changeListeners = [];
 
 // =============================================
 // DATA OPERATIONS

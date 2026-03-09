@@ -1,0 +1,12 @@
+firebase.json
+**/.*
+**/node_modules/**
+functions/**
+README.md
+*.bat
+tests/**
+package.json
+package-lock.json
+vitest.config.js
+eslint.config.js
+firestore.rules
