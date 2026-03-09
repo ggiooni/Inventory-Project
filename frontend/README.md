@@ -60,6 +60,8 @@ This project addresses these challenges by providing:
 | **Smart Alerts** | Three-tier priority system (Urgent, Normal, Info) |
 | **POS Integration** | Support for Toast, Square, Clover, and Lightspeed POS systems |
 | **AI Assistant** | Natural language queries powered by Groq LLM |
+| **Recipe Management** | Create, edit, delete recipes with ingredient mapping to inventory. CSV import/export. Auto-deduct stock when orders are placed |
+| **Product Management** | Add new inventory products directly from the UI with category, unit, stock, and priority settings |
 
 ### AI-Powered Features
 
@@ -68,6 +70,14 @@ This project addresses these challenges by providing:
 - **Shopping List Generation**: Automated, intelligent shopping lists with recommended quantities
 - **Inventory Insights**: Cost optimization and waste reduction recommendations
 - **Anomaly Detection**: Identification of unusual consumption patterns
+
+### Recipe & Order System
+
+- **Recipe CRUD**: Admin/Manager can create, edit, and delete recipes with ingredients mapped to inventory items
+- **Searchable Ingredients**: Autocomplete search when adding ingredients to recipes — type to filter, click to select
+- **Auto-Create Items**: If an ingredient doesn't exist in inventory, create it directly from the recipe form
+- **CSV Import/Export**: Download a CSV template, fill in recipes, and bulk-import them
+- **Inventory Auto-Deduction**: When an order is placed, the system automatically deducts ingredient quantities from stock
 
 ### UX/UI Features (New)
 
@@ -78,13 +88,16 @@ This project addresses these challenges by providing:
 - **Toast Notifications**: Non-intrusive feedback for user actions
 - **Onboarding Tour**: Guided tour for first-time users
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
+- **View-Based SPA Routing**: Sidebar navigation shows/hides content sections instead of stacking panels vertically
+- **Floating AI Chat Bubble**: AI Assistant as a floating chat bubble (bottom-right) instead of a full panel
+- **Category Picker Modal**: Visual category selection with emoji buttons when creating new inventory items
 
 ### User Roles & Permissions
 
 | Role | Permissions |
 |------|-------------|
-| **Admin** | Full access: inventory, priorities, POS configuration, AI features |
-| **Manager** | Inventory management, POS configuration, AI features |
+| **Admin** | Full access: inventory, recipes, products, priorities, POS configuration, AI features |
+| **Manager** | Inventory management, recipe management, product creation, POS configuration, AI features |
 | **Staff** | View inventory, update stock levels |
 
 ---
@@ -252,18 +265,20 @@ smart-inventory/
 │                           # - Responsive design
 │                           # - Component styles
 │
-├── js/
-│   ├── firebase-config.js  # Firebase initialization
-│   ├── app.js              # Main application logic
-│   │                       # - Authentication
-│   │                       # - Inventory management
-│   │                       # - POS integration
-│   │                       # - Alert system
-│   │
-│   └── ai-assistant.js     # AI integration module
-│                           # - Cloud Functions integration
-│                           # - Natural language processing
-│                           # - Predictive analytics
+├── src/
+│   ├── config/
+│   │   ├── firebase.js          # Firebase initialization
+│   │   ├── firebase-config.local.js  # Firebase credentials
+│   │   └── constants.js         # Application constants
+│   ├── modules/
+│   │   ├── auth.js              # Authentication & authorization
+│   │   ├── inventory.js         # Inventory CRUD + addInventoryItem
+│   │   ├── alerts.js            # Alert generation & management
+│   │   ├── pos-integration.js   # POS system connectivity
+│   │   └── recipes.js           # Recipe management (CRUD, Firestore)
+│   ├── services/
+│   │   └── ai-assistant.js      # AI/LLM integration (Groq)
+│   └── app.js                   # Main application entry point
 │
 └── functions/
     ├── index.js            # Firebase Cloud Functions
@@ -362,6 +377,8 @@ Toggle between light and dark themes. Preference is saved in localStorage.
 
 ### Planned Enhancements
 
+- [x] Recipe management with CSV import
+- [ ] Order/POS system for automatic stock deduction
 - [ ] Mobile application (React Native)
 - [ ] Advanced ML models for demand prediction
 - [ ] Multi-location support

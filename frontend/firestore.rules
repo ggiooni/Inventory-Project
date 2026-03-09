@@ -52,6 +52,12 @@ service cloud.firestore {
       allow write: if isManagerOrAdmin();
     }
 
+    // Recipes collection - all authenticated users can read, managers/admins can write
+    match /recipes/{recipeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isManagerOrAdmin();
+    }
+
     // User settings (future use)
     match /users/{userId} {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;

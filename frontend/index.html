@@ -40,18 +40,10 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-section-title">Main</div>
-                    <a class="nav-item active" data-section="dashboard" onclick="navigateTo('dashboard')">
-                        <span class="nav-item-icon">&#128200;</span>
-                        <span class="nav-item-text">Dashboard</span>
-                    </a>
-                    <a class="nav-item" data-section="inventory" onclick="navigateTo('inventory')">
+                    <a class="nav-item active" data-section="inventory" onclick="navigateTo('inventory')">
                         <span class="nav-item-icon">&#128230;</span>
                         <span class="nav-item-text">Inventory</span>
                         <span class="nav-item-badge" id="alertBadge">0</span>
-                    </a>
-                    <a class="nav-item" data-section="ai-assistant" onclick="navigateTo('ai-assistant')">
-                        <span class="nav-item-icon">&#129302;</span>
-                        <span class="nav-item-text">AI Assistant</span>
                     </a>
                 </div>
 
@@ -124,258 +116,274 @@
 
             <!-- CONTENT WRAPPER -->
             <div class="content-wrapper">
-                <!-- QUICK STATS -->
-                <section class="stats-grid" id="statsSection">
-                    <div class="stat-card">
-                        <div class="stat-icon primary">&#128230;</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Total Products</div>
-                            <div class="stat-value" id="totalProducts">0</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon danger">&#128680;</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Urgent Alerts</div>
-                            <div class="stat-value" id="urgentAlertsCount">0</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon warning">&#128276;</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Low Stock Items</div>
-                            <div class="stat-value" id="lowStockCount">0</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon success">&#9989;</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Good Stock</div>
-                            <div class="stat-value" id="goodStockCount">0</div>
-                        </div>
-                    </div>
-                </section>
 
-                <!-- AI ASSISTANT PANEL -->
-                <section class="panel ai-panel" id="aiAssistantPanel">
-                    <div class="panel-header" onclick="togglePanel('aiAssistantPanel')">
-                        <div class="panel-header-left">
-                            <span class="panel-icon">&#129302;</span>
-                            <span class="panel-title">AI Assistant</span>
-                        </div>
-                        <div class="panel-header-right">
-                            <div class="ai-status">
-                                <span class="ai-status-dot"></span>
-                                <span>Powered by Groq</span>
+                <!-- ========== DASHBOARD VIEW ========== -->
+                <div class="view active" id="view-dashboard">
+                    <!-- QUICK STATS -->
+                    <section class="stats-grid" id="statsSection">
+                        <div class="stat-card">
+                            <div class="stat-icon primary">&#128230;</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Total Products</div>
+                                <div class="stat-value" id="totalProducts">0</div>
                             </div>
-                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
                         </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="ai-suggestions">
-                            <button class="ai-suggestion-btn" onclick="askAI('What items need to be restocked this week?')">
-                                &#128230; What needs restocking?
-                            </button>
-                            <button class="ai-suggestion-btn" onclick="askAI('Generate a shopping list based on current stock levels')">
-                                &#128722; Generate shopping list
-                            </button>
-                            <button class="ai-suggestion-btn" onclick="askAI('Which items are overstocked and might go to waste?')">
-                                &#9888; Overstock warnings
-                            </button>
-                            <button class="ai-suggestion-btn" onclick="askAI('Analyze consumption patterns and predict next week needs')">
-                                &#128200; Predict next week
-                            </button>
+                        <div class="stat-card">
+                            <div class="stat-icon danger">&#128680;</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Urgent Alerts</div>
+                                <div class="stat-value" id="urgentAlertsCount">0</div>
+                            </div>
                         </div>
+                        <div class="stat-card">
+                            <div class="stat-icon warning">&#128276;</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Low Stock Items</div>
+                                <div class="stat-value" id="lowStockCount">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon success">&#9989;</div>
+                            <div class="stat-content">
+                                <div class="stat-label">Good Stock</div>
+                                <div class="stat-value" id="goodStockCount">0</div>
+                            </div>
+                        </div>
+                    </section>
 
-                        <div class="ai-chat-messages" id="aiChatMessages" role="log" aria-live="polite">
-                            <div class="ai-message assistant">
-                                <div class="ai-message-content">
-                                    &#128075; Hello! I'm your AI inventory assistant. Ask me anything about your stock levels, predictions, or get recommendations for your inventory.
+                    <!-- SEARCH AND FILTERS -->
+                    <section class="search-filter-bar" id="searchSection">
+                        <div class="search-input-wrapper">
+                            <span class="search-icon">&#128269;</span>
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search products..." aria-label="Search products">
+                        </div>
+                        <select id="categoryFilter" class="filter-select" aria-label="Filter by category">
+                            <option value="">All Categories</option>
+                            <option value="Spirits">&#127866; Spirits</option>
+                            <option value="Wines">&#127863; Wines</option>
+                            <option value="Beers">&#127866; Beers & Kegs</option>
+                            <option value="Soft Drinks">&#129380; Soft Drinks</option>
+                            <option value="Syrups">&#129514; Syrups & Mixers</option>
+                        </select>
+                        <select id="alertFilter" class="filter-select" aria-label="Filter by status">
+                            <option value="">All Status</option>
+                            <option value="urgent">&#128308; Urgent</option>
+                            <option value="normal">&#128992; Low Stock</option>
+                            <option value="good">&#128994; Good Stock</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
+                        <button class="btn btn-primary" id="addProductBtn" onclick="openAddProductModal()" style="display: none;">&#43; New Product</button>
+                    </section>
+
+                    <!-- LOADING STATE -->
+                    <div id="loadingState" class="loading-spinner">
+                        <div class="spinner"></div>
+                        <span>Loading inventory data...</span>
+                    </div>
+
+                    <!-- INVENTORY TABLE (Desktop) -->
+                    <section class="table-container" id="inventoryTableContainer" style="display: none;">
+                        <table class="inventory-table" id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>POS Status</th>
+                                    <th>Stock Status</th>
+                                    <th>Current Stock</th>
+                                    <th>Priority Settings</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryBody">
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- INVENTORY CARDS (Mobile) -->
+                    <section class="inventory-cards" id="inventoryCards">
+                        <!-- Cards loaded dynamically -->
+                    </section>
+                </div>
+
+                <!-- ========== ALERTS VIEW ========== -->
+                <div class="view" id="view-alerts">
+                    <section class="panel alerts-panel" id="alertsDashboard">
+                        <div class="panel-header" onclick="togglePanel('alertsDashboard')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#128680;</span>
+                                <span class="panel-title">Stock Alerts</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <div class="alert-summary">
+                                    <span class="alert-counter urgent"><span id="urgentNumber">0</span> Urgent</span>
+                                    <span class="alert-counter"><span id="normalNumber">0</span> Normal</span>
+                                    <span class="alert-counter"><span id="infoNumber">0</span> Info</span>
+                                </div>
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="alerts-grid" id="alertsGrid">
+                                <!-- Alerts loaded dynamically -->
+                            </div>
+                            <div class="alert-actions" style="margin-top: 16px; text-align: center;">
+                                <button class="alert-btn" onclick="generateShoppingList()">&#128221; Generate Shopping List</button>
+                                <button class="alert-btn" onclick="exportAlerts()">&#128200; Export Alerts</button>
+                                <button class="alert-btn" onclick="syncWithPOS()">&#128260; Sync with POS</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ========== POS VIEW ========== -->
+                <div class="view" id="view-pos">
+                    <section class="panel pos-panel" id="posIntegrationPanel">
+                        <div class="panel-header" onclick="togglePanel('posIntegrationPanel')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#128268;</span>
+                                <span class="panel-title">POS Integration Status</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <button class="btn btn-small" onclick="event.stopPropagation(); configurePOS()">Configure</button>
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="pos-stats">
+                                <div class="pos-stat-card">
+                                    <h3>POS System</h3>
+                                    <p class="status-badge" id="toastStatus">Not Connected</p>
+                                    <p class="last-sync">Last Sync: <span id="lastSync">Never</span></p>
+                                </div>
+                                <div class="pos-stat-card">
+                                    <h3>Items Mapped</h3>
+                                    <p class="stat-number" id="mappedItems">0</p>
+                                    <button class="btn-small" onclick="openItemMapping()">Map Items</button>
+                                </div>
+                                <div class="pos-stat-card">
+                                    <h3>Auto-Updates</h3>
+                                    <p class="stat-number" id="autoUpdates">0</p>
+                                    <p class="stat-label">Today</p>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="ai-input-container">
-                            <input type="text" id="aiInput" class="ai-input"
-                                   placeholder="Ask about inventory, predictions, or recommendations..."
-                                   onkeypress="if(event.key === 'Enter') sendAIMessage()"
-                                   aria-label="AI chat input">
-                            <button class="ai-send-btn" onclick="sendAIMessage()" aria-label="Send message">
-                                <span>Send</span>
-                                <span class="ai-loading" id="aiLoading" style="display: none;">&#8987;</span>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- ALERTS DASHBOARD -->
-                <section class="panel alerts-panel" id="alertsDashboard">
-                    <div class="panel-header" onclick="togglePanel('alertsDashboard')">
-                        <div class="panel-header-left">
-                            <span class="panel-icon">&#128680;</span>
-                            <span class="panel-title">Stock Alerts</span>
-                        </div>
-                        <div class="panel-header-right">
-                            <div class="alert-summary">
-                                <span class="alert-counter urgent"><span id="urgentNumber">0</span> Urgent</span>
-                                <span class="alert-counter"><span id="normalNumber">0</span> Normal</span>
-                                <span class="alert-counter"><span id="infoNumber">0</span> Info</span>
-                            </div>
-                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
-                        </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="alerts-grid" id="alertsGrid">
-                            <!-- Alerts loaded dynamically -->
-                        </div>
-                        <div class="alert-actions" style="margin-top: 16px; text-align: center;">
-                            <button class="alert-btn" onclick="generateShoppingList()">&#128221; Generate Shopping List</button>
-                            <button class="alert-btn" onclick="exportAlerts()">&#128200; Export Alerts</button>
-                            <button class="alert-btn" onclick="syncWithPOS()">&#128260; Sync with POS</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- POS INTEGRATION PANEL -->
-                <section class="panel pos-panel" id="posIntegrationPanel">
-                    <div class="panel-header" onclick="togglePanel('posIntegrationPanel')">
-                        <div class="panel-header-left">
-                            <span class="panel-icon">&#128268;</span>
-                            <span class="panel-title">POS Integration Status</span>
-                        </div>
-                        <div class="panel-header-right">
-                            <button class="btn btn-small" onclick="event.stopPropagation(); configurePOS()">Configure</button>
-                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
-                        </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="pos-stats">
-                            <div class="pos-stat-card">
-                                <h3>POS System</h3>
-                                <p class="status-badge" id="toastStatus">Not Connected</p>
-                                <p class="last-sync">Last Sync: <span id="lastSync">Never</span></p>
-                            </div>
-                            <div class="pos-stat-card">
-                                <h3>Items Mapped</h3>
-                                <p class="stat-number" id="mappedItems">0</p>
-                                <button class="btn-small" onclick="openItemMapping()">Map Items</button>
-                            </div>
-                            <div class="pos-stat-card">
-                                <h3>Auto-Updates</h3>
-                                <p class="stat-number" id="autoUpdates">0</p>
-                                <p class="stat-label">Today</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- PRIORITY MANAGEMENT (Admin Only) -->
-                <section class="panel" id="priorityPanel" style="display: none;">
-                    <div class="panel-header" onclick="togglePanel('priorityPanel')">
-                        <div class="panel-header-left">
-                            <span class="panel-icon">&#9881;</span>
-                            <span class="panel-title">Priority Management (Admin)</span>
-                        </div>
-                        <div class="panel-header-right">
-                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
-                        </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="priority-controls-row" style="margin-bottom: 16px;">
-                            <select class="filter-select" id="categoryPriorityFilter">
-                                <option value="">All Categories</option>
-                                <option value="Spirits">&#127866; Spirits</option>
-                                <option value="Wines">&#127863; Wines</option>
-                                <option value="Beers">&#127866; Beers & Kegs</option>
-                                <option value="Soft Drinks">&#129380; Soft Drinks</option>
-                                <option value="Syrups">&#129514; Syrups & Mixers</option>
-                            </select>
-                            <button class="btn btn-primary" onclick="applyPriorityFilters()">Filter</button>
-                            <button class="btn btn-secondary" onclick="resetPriorityDefaults()">Reset Defaults</button>
-                            <button class="btn btn-warning" onclick="bulkPriorityUpdate()">Bulk Update</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- RECIPES MANAGEMENT (Admin Only) -->
-                <section class="panel" id="recipesPanel" style="display: none;">
-                    <div class="panel-header" onclick="togglePanel('recipesPanel')">
-                        <div class="panel-header-left">
-                            <span class="panel-icon">&#128214;</span>
-                            <span class="panel-title">Recipe Management (Admin)</span>
-                        </div>
-                        <div class="panel-header-right">
-                            <button class="btn btn-small btn-primary" onclick="event.stopPropagation(); openCreateRecipeModal()">+ New Recipe</button>
-                            <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
-                        </div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="recipes-filter-row" style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <input type="text" id="recipeSearchInput" class="search-input" placeholder="Search recipes..." style="flex: 1; min-width: 200px;" oninput="filterRecipes()">
-                            <select id="recipeCategoryFilter" class="filter-select" onchange="filterRecipes()">
-                                <option value="">All Categories</option>
-                            </select>
-                        </div>
-                        <div class="recipes-grid" id="recipesGrid">
-                            <!-- Recipes loaded dynamically -->
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SEARCH AND FILTERS -->
-                <section class="search-filter-bar" id="searchSection">
-                    <div class="search-input-wrapper">
-                        <span class="search-icon">&#128269;</span>
-                        <input type="text" id="searchInput" class="search-input" placeholder="Search products..." aria-label="Search products">
-                    </div>
-                    <select id="categoryFilter" class="filter-select" aria-label="Filter by category">
-                        <option value="">All Categories</option>
-                        <option value="Spirits">&#127866; Spirits</option>
-                        <option value="Wines">&#127863; Wines</option>
-                        <option value="Beers">&#127866; Beers & Kegs</option>
-                        <option value="Soft Drinks">&#129380; Soft Drinks</option>
-                        <option value="Syrups">&#129514; Syrups & Mixers</option>
-                    </select>
-                    <select id="alertFilter" class="filter-select" aria-label="Filter by status">
-                        <option value="">All Status</option>
-                        <option value="urgent">&#128308; Urgent</option>
-                        <option value="normal">&#128992; Low Stock</option>
-                        <option value="good">&#128994; Good Stock</option>
-                    </select>
-                    <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
-                </section>
-
-                <!-- LOADING STATE -->
-                <div id="loadingState" class="loading-spinner">
-                    <div class="spinner"></div>
-                    <span>Loading inventory data...</span>
+                    </section>
                 </div>
 
-                <!-- INVENTORY TABLE (Desktop) -->
-                <section class="table-container" id="inventoryTableContainer" style="display: none;">
-                    <table class="inventory-table" id="inventoryTable">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Category</th>
-                                <th>POS Status</th>
-                                <th>Stock Status</th>
-                                <th>Current Stock</th>
-                                <th>Priority Settings</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryBody">
-                        </tbody>
-                    </table>
-                </section>
+                <!-- ========== RECIPES VIEW (Admin Only) ========== -->
+                <div class="view" id="view-recipes">
+                    <section class="panel" id="recipesPanel">
+                        <div class="panel-header" onclick="togglePanel('recipesPanel')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#128214;</span>
+                                <span class="panel-title">Recipe Management</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <button class="btn btn-small btn-primary recipe-admin-btn" onclick="event.stopPropagation(); openCreateRecipeModal()" style="display: none;">+ New Recipe</button>
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="recipes-filter-row" style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="recipeSearchInput" class="search-input" placeholder="Search recipes..." style="flex: 1; min-width: 200px;" oninput="filterRecipes()">
+                                <select id="recipeCategoryFilter" class="filter-select" onchange="filterRecipes()">
+                                    <option value="">All Categories</option>
+                                </select>
+                                <button class="btn btn-secondary recipe-admin-btn" onclick="downloadRecipeTemplate()" style="display: none;">&#128196; Template</button>
+                                <label class="btn btn-secondary recipe-admin-btn" style="cursor: pointer; margin: 0; display: none;">
+                                    &#128194; Import CSV
+                                    <input type="file" id="recipeFileInput" accept=".csv" style="display: none;" onchange="importRecipesFromFile(this)">
+                                </label>
+                            </div>
+                            <div class="recipes-grid" id="recipesGrid">
+                                <!-- Recipes loaded dynamically -->
+                            </div>
+                        </div>
+                    </section>
+                </div>
 
-                <!-- INVENTORY CARDS (Mobile) -->
-                <section class="inventory-cards" id="inventoryCards">
-                    <!-- Cards loaded dynamically -->
-                </section>
+                <!-- ========== SETTINGS VIEW (Admin Only) ========== -->
+                <div class="view" id="view-settings">
+                    <section class="panel" id="priorityPanel">
+                        <div class="panel-header" onclick="togglePanel('priorityPanel')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#9881;</span>
+                                <span class="panel-title">Priority Management</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="priority-controls-row" style="margin-bottom: 16px;">
+                                <select class="filter-select" id="categoryPriorityFilter">
+                                    <option value="">All Categories</option>
+                                    <option value="Spirits">&#127866; Spirits</option>
+                                    <option value="Wines">&#127863; Wines</option>
+                                    <option value="Beers">&#127866; Beers & Kegs</option>
+                                    <option value="Soft Drinks">&#129380; Soft Drinks</option>
+                                    <option value="Syrups">&#129514; Syrups & Mixers</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="applyPriorityFilters()">Filter</button>
+                                <button class="btn btn-secondary" onclick="resetPriorityDefaults()">Reset Defaults</button>
+                                <button class="btn btn-warning" onclick="bulkPriorityUpdate()">Bulk Update</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
             </div>
         </main>
+    </div>
+
+    <!-- FLOATING AI CHAT BUBBLE -->
+    <div class="ai-bubble" id="aiBubble">
+        <button class="ai-bubble-btn" id="aiBubbleBtn" onclick="toggleAIChat()" aria-label="Open AI Assistant">
+            <span class="ai-bubble-icon" id="aiBubbleIcon">&#129302;</span>
+            <span class="ai-bubble-pulse"></span>
+        </button>
+        <div class="ai-bubble-chat" id="aiBubbleChat">
+            <div class="ai-bubble-header">
+                <div class="ai-bubble-header-left">
+                    <span>&#129302;</span>
+                    <span class="ai-bubble-title">AI Assistant</span>
+                    <div class="ai-status">
+                        <span class="ai-status-dot"></span>
+                        <span>Groq</span>
+                    </div>
+                </div>
+                <button class="ai-bubble-close" onclick="toggleAIChat()" aria-label="Close AI chat">&times;</button>
+            </div>
+            <div class="ai-bubble-suggestions">
+                <button class="ai-suggestion-btn" onclick="askAI('What items need to be restocked this week?')">
+                    &#128230; Restocking?
+                </button>
+                <button class="ai-suggestion-btn" onclick="askAI('Generate a shopping list based on current stock levels')">
+                    &#128722; Shopping list
+                </button>
+                <button class="ai-suggestion-btn" onclick="askAI('Analyze consumption patterns and predict next week needs')">
+                    &#128200; Predictions
+                </button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages" role="log" aria-live="polite">
+                <div class="ai-message assistant">
+                    <div class="ai-message-content">
+                        &#128075; Hi! I'm your AI inventory assistant. Ask me anything about stock levels, predictions, or recommendations.
+                    </div>
+                </div>
+            </div>
+            <div class="ai-input-container">
+                <input type="text" id="aiInput" class="ai-input"
+                       placeholder="Ask about inventory..."
+                       onkeypress="if(event.key === 'Enter') sendAIMessage()"
+                       aria-label="AI chat input">
+                <button class="ai-send-btn" onclick="sendAIMessage()" aria-label="Send message">
+                    <span>&#10148;</span>
+                    <span class="ai-loading" id="aiLoading" style="display: none;">&#8987;</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- TOAST NOTIFICATIONS CONTAINER -->
@@ -505,6 +513,65 @@
         </div>
     </div>
 
+    <!-- Add Product Modal -->
+    <div class="modal-overlay" id="addProductModal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3 class="modal-title">&#43; New Inventory Product</h3>
+                <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="newProductName" placeholder="e.g. Absolut Vodka 700ml" class="search-input">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="newProductCategory" class="filter-select">
+                        <option value="">Select category...</option>
+                        <option value="Spirits">Spirits</option>
+                        <option value="Wines">Wines</option>
+                        <option value="Beers">Beers & Kegs</option>
+                        <option value="Soft Drinks">Soft Drinks</option>
+                        <option value="Syrups">Syrups & Mixers</option>
+                        <option value="Garnishes">Garnishes</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unit</label>
+                    <select id="newProductUnit" class="filter-select">
+                        <option value="bottles">Bottles</option>
+                        <option value="units">Units</option>
+                        <option value="kegs">Kegs</option>
+                        <option value="litres">Litres</option>
+                        <option value="kg">Kg</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Initial Stock</label>
+                    <input type="number" id="newProductStock" min="0" value="0" step="1" class="search-input">
+                </div>
+                <div class="form-group">
+                    <label>Alert Threshold (low stock warning at)</label>
+                    <input type="number" id="newProductThreshold" min="0" value="5" step="1" class="search-input">
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="newProductPriority" class="filter-select">
+                        <option value="high">High</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewProduct()">Add Product</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Recipe Create/Edit Modal -->
     <div class="modal-overlay" id="recipeModal">
         <div class="modal" style="max-width: 700px;">
@@ -541,6 +608,29 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('recipeModal')">Cancel</button>
                 <button class="btn btn-primary" id="recipeSubmitBtn" onclick="submitRecipe()">Create Recipe</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Picker Modal (for new inventory items) -->
+    <div class="modal-overlay" id="categoryPickerModal" style="z-index: 10000;">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="categoryPickerTitle">Select Category</h3>
+                <button class="modal-close" onclick="closeCategoryPicker()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px 24px;">
+                <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.9em;" id="categoryPickerSubtitle">Choose a category for this item:</p>
+                <div id="categoryPickerGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Spirits" style="padding: 14px 12px; font-size: 0.95em;">&#127867; Spirits</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Wines" style="padding: 14px 12px; font-size: 0.95em;">&#127863; Wines</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Beers" style="padding: 14px 12px; font-size: 0.95em;">&#127866; Beers</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Mixers" style="padding: 14px 12px; font-size: 0.95em;">&#129380; Mixers</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Garnishes" style="padding: 14px 12px; font-size: 0.95em;">&#127819; Garnishes</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Syrups" style="padding: 14px 12px; font-size: 0.95em;">&#129514; Syrups</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Soft Drinks" style="padding: 14px 12px; font-size: 0.95em;">&#129477; Soft Drinks</button>
+                    <button class="btn btn-secondary category-pick-btn" data-cat="Other" style="padding: 14px 12px; font-size: 0.95em;">&#128230; Other</button>
+                </div>
             </div>
         </div>
     </div>
@@ -612,21 +702,55 @@
             document.getElementById('sidebar').classList.remove('mobile-open');
         }
 
-        // Navigation
+        // Navigation - view-based routing
         function navigateTo(section) {
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`[data-section="${section}"]`).classList.add('active');
-            document.getElementById('pageTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1).replace('-', ' ');
+            const navItem = document.querySelector(`[data-section="${section}"]`);
+            if (navItem) navItem.classList.add('active');
+
+            // Map section names to view IDs
+            const viewMap = {
+                'dashboard': 'view-dashboard',
+                'inventory': 'view-dashboard',
+                'alerts': 'view-alerts',
+                'pos': 'view-pos',
+                'recipes': 'view-recipes',
+                'settings': 'view-settings'
+            };
+
+            const titleMap = {
+                'dashboard': 'Dashboard',
+                'inventory': 'Inventory',
+                'alerts': 'Stock Alerts',
+                'pos': 'POS Integration',
+                'recipes': 'Recipes',
+                'settings': 'Settings'
+            };
+
+            document.getElementById('pageTitle').textContent = titleMap[section] || section;
             closeMobileMenu();
 
-            // Scroll to section
-            const sectionEl = document.getElementById(section + 'Panel') ||
-                            document.getElementById(section + 'Section') ||
-                            document.getElementById(section + 'Dashboard');
-            if (sectionEl) {
-                sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Hide all views, show target
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(viewMap[section] || 'view-dashboard');
+            if (targetView) targetView.classList.add('active');
+
+            // Scroll to top
+            document.querySelector('.content-wrapper')?.scrollTo(0, 0);
+        }
+
+        // AI Chat Bubble toggle
+        function toggleAIChat() {
+            const bubble = document.getElementById('aiBubble');
+            bubble.classList.toggle('open');
+            const icon = document.getElementById('aiBubbleIcon');
+            if (bubble.classList.contains('open')) {
+                icon.innerHTML = '&#10006;';
+                document.getElementById('aiInput')?.focus();
+            } else {
+                icon.innerHTML = '&#129302;';
             }
         }
 
@@ -677,16 +801,6 @@
                 content: 'Here you can see a summary of your inventory status at a glance - total products, alerts, and stock levels.'
             },
             {
-                element: '#aiAssistantPanel',
-                title: 'AI Assistant',
-                content: 'Ask questions about your inventory in natural language. The AI can help with predictions, shopping lists, and insights.'
-            },
-            {
-                element: '#alertsDashboard',
-                title: 'Stock Alerts',
-                content: 'Critical stock alerts are shown here. Products are categorized by urgency based on their priority settings.'
-            },
-            {
                 element: '#searchSection',
                 title: 'Search & Filters',
                 content: 'Quickly find products by name, category, or stock status using these filters.'
@@ -694,7 +808,12 @@
             {
                 element: '#sidebar',
                 title: 'Navigation',
-                content: 'Use the sidebar to navigate between different sections. You can collapse it for more space.'
+                content: 'Use the sidebar to navigate between Alerts, POS, Recipes, and Settings views.'
+            },
+            {
+                element: '#aiBubble',
+                title: 'AI Assistant',
+                content: 'Click the AI bubble in the bottom-right to chat with your inventory assistant. Get predictions, shopping lists, and insights.'
             }
         ];
 

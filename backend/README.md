@@ -76,6 +76,16 @@ npm run dev
 | GET | `/api/pos/mappings` | Get mappings | Private |
 | POST | `/api/pos/mappings` | Save mappings | Manager/Admin |
 
+### Recipes
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | `/api/recipes` | Get all recipes | Private |
+| GET | `/api/recipes/:id` | Get single recipe | Private |
+| POST | `/api/recipes` | Create recipe | Admin |
+| PUT | `/api/recipes/:id` | Update recipe | Admin |
+| DELETE | `/api/recipes/:id` | Delete recipe | Admin |
+
 ---
 
 ## Authentication
@@ -112,7 +122,8 @@ backend/
 │   │   ├── inventory.controller.js
 │   │   ├── alerts.controller.js
 │   │   ├── ai.controller.js
-│   │   └── pos.controller.js
+│   │   ├── pos.controller.js
+│   │   └── recipes.controller.js
 │   ├── middleware/      # Express middleware
 │   │   ├── auth.js      # JWT verification
 │   │   └── errorHandler.js
@@ -121,7 +132,8 @@ backend/
 │   │   ├── inventory.routes.js
 │   │   ├── alerts.routes.js
 │   │   ├── ai.routes.js
-│   │   └── pos.routes.js
+│   │   ├── pos.routes.js
+│   │   └── recipes.routes.js
 │   └── server.js        # Entry point
 ├── .env.example         # Environment template
 ├── package.json

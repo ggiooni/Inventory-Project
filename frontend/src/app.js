@@ -60,6 +60,7 @@ import {
     updateStock,
     updatePriority,
     resetToDefaults,
+    addInventoryItem,
     applyFilters,
     clearFilters as clearInventoryFilters,
     onInventoryChange
@@ -306,21 +307,21 @@ function updateUserDisplay(displayName, role) {
  * Update UI based on user permissions
  */
 function updateUIPermissions(role) {
-    const priorityPanel = document.getElementById('priorityPanel');
     const adminSection = document.getElementById('adminSection');
-    const recipesPanel = document.getElementById('recipesPanel');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const isManagerOrAdmin = role === 'admin' || role === 'manager';
 
-    const isAdmin = role === 'admin';
-
-    if (priorityPanel) {
-        priorityPanel.style.display = isAdmin ? 'block' : 'none';
-    }
     if (adminSection) {
-        adminSection.style.display = isAdmin ? 'block' : 'none';
+        adminSection.style.display = isManagerOrAdmin ? 'block' : 'none';
     }
-    if (recipesPanel) {
-        recipesPanel.style.display = isAdmin ? 'block' : 'none';
+    if (addProductBtn) {
+        addProductBtn.style.display = isManagerOrAdmin ? 'inline-flex' : 'none';
     }
+
+    // Show/hide recipe management buttons for admin/manager
+    document.querySelectorAll('.recipe-admin-btn').forEach(btn => {
+        btn.style.display = isManagerOrAdmin ? '' : 'none';
+    });
 }
 
 /**
@@ -1062,10 +1063,10 @@ function renderRecipesPanel() {
                     <h4 style="margin: 0; color: var(--text-primary);">${escapeHtml(recipe.name)}</h4>
                     <span class="priority-badge medium" style="margin-top: 4px; display: inline-block;">${escapeHtml(recipe.category)}</span>
                 </div>
-                <div style="display: flex; gap: 8px;">
+                ${canManageProducts() ? `<div style="display: flex; gap: 8px;">
                     <button class="btn btn-small btn-secondary" onclick="openEditRecipeModal('${escapeHtml(recipe.id)}')" title="Edit">&#9998;</button>
                     <button class="btn btn-small btn-secondary" onclick="deleteRecipeAction('${escapeHtml(recipe.id)}', '${escapeHtml(recipe.name)}')" title="Delete" style="color: var(--danger);">&#128465;</button>
-                </div>
+                </div>` : ''}
             </div>
             <div style="color: var(--text-muted); font-size: 0.9em;">
                 <strong>Ingredients (${recipe.ingredients.length}):</strong>
@@ -1082,8 +1083,8 @@ window.filterRecipes = function() {
 };
 
 window.openCreateRecipeModal = function() {
-    if (!canManagePriorities()) {
-        showNotification('Admin access required', 'error');
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
         return;
     }
 
@@ -1101,8 +1102,8 @@ window.openCreateRecipeModal = function() {
 };
 
 window.openEditRecipeModal = function(recipeId) {
-    if (!canManagePriorities()) {
-        showNotification('Admin access required', 'error');
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
         return;
     }
 
@@ -1129,41 +1130,9 @@ window.openEditRecipeModal = function(recipeId) {
     document.getElementById('recipeModal').classList.add('show');
 };
 
-window.addRecipeIngredientRow = function(ingredient = null) {
-    const list = document.getElementById('recipeIngredientsList');
-    const inventoryItems = getInventoryItems();
-
-    const row = document.createElement('div');
-    row.className = 'recipe-ingredient-row';
-    row.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;';
-
-    const selectedId = ingredient?.inventoryItemId || '';
-    const selectedQty = ingredient?.quantity || '';
-    const selectedUnit = ingredient?.unit || 'ml';
-
-    row.innerHTML = `
-        <select class="filter-select recipe-inv-select" style="flex: 2; min-width: 150px;">
-            <option value="">Select inventory item...</option>
-            ${inventoryItems.map(item => `<option value="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}" ${item.id === selectedId ? 'selected' : ''}>${escapeHtml(item.name)} (${escapeHtml(item.category)})</option>`).join('')}
-        </select>
-        <input type="number" class="recipe-qty-input" placeholder="Qty" value="${selectedQty}" min="0.1" step="0.1" style="flex: 0.7; min-width: 70px;">
-        <select class="filter-select recipe-unit-select" style="flex: 0.7; min-width: 70px;">
-            <option value="ml" ${selectedUnit === 'ml' ? 'selected' : ''}>ml</option>
-            <option value="oz" ${selectedUnit === 'oz' ? 'selected' : ''}>oz</option>
-            <option value="cl" ${selectedUnit === 'cl' ? 'selected' : ''}>cl</option>
-            <option value="units" ${selectedUnit === 'units' ? 'selected' : ''}>units</option>
-            <option value="g" ${selectedUnit === 'g' ? 'selected' : ''}>g</option>
-            <option value="dashes" ${selectedUnit === 'dashes' ? 'selected' : ''}>dashes</option>
-        </select>
-        <button class="btn btn-small btn-secondary" onclick="this.parentElement.remove()" style="color: var(--danger);" title="Remove">&times;</button>
-    `;
-
-    list.appendChild(row);
-};
-
 window.submitRecipe = async function() {
-    if (!canManagePriorities()) {
-        showNotification('Admin access required', 'error');
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
         return;
     }
 
@@ -1181,15 +1150,16 @@ window.submitRecipe = async function() {
     const ingredients = [];
 
     for (const row of rows) {
-        const select = row.querySelector('.recipe-inv-select');
+        const hiddenId = row.querySelector('.recipe-inv-id');
+        const searchInput = row.querySelector('.recipe-ing-search');
         const qty = row.querySelector('.recipe-qty-input');
         const unit = row.querySelector('.recipe-unit-select');
 
-        const itemId = select.value;
-        const itemName = select.selectedOptions[0]?.dataset?.name || '';
+        const itemId = hiddenId?.value || '';
+        const itemName = searchInput?.value?.trim() || '';
         const quantity = parseFloat(qty.value);
 
-        if (!itemId) continue;
+        if (!itemId || !itemName) continue;
 
         if (!quantity || quantity <= 0) {
             showNotification(`Please enter a valid quantity for ${itemName || 'the ingredient'}`, 'warning');
@@ -1228,8 +1198,8 @@ window.submitRecipe = async function() {
 };
 
 window.deleteRecipeAction = async function(recipeId, recipeName) {
-    if (!canManagePriorities()) {
-        showNotification('Admin access required', 'error');
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
         return;
     }
 
@@ -1242,6 +1212,368 @@ window.deleteRecipeAction = async function(recipeId, recipeName) {
     } else {
         showNotification(result.error || 'Error deleting recipe', 'error');
     }
+};
+
+// =============================================
+// ADD NEW PRODUCT
+// =============================================
+
+window.openAddProductModal = function() {
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
+        return;
+    }
+
+    document.getElementById('newProductName').value = '';
+    document.getElementById('newProductCategory').value = '';
+    document.getElementById('newProductUnit').value = 'bottles';
+    document.getElementById('newProductStock').value = '0';
+    document.getElementById('newProductThreshold').value = '5';
+    document.getElementById('newProductPriority').value = 'medium';
+    document.getElementById('addProductModal').classList.add('show');
+};
+
+window.submitNewProduct = async function() {
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
+        return;
+    }
+
+    const name = document.getElementById('newProductName').value.trim();
+    const category = document.getElementById('newProductCategory').value;
+    const unit = document.getElementById('newProductUnit').value;
+    const currentStock = parseInt(document.getElementById('newProductStock').value) || 0;
+    const alertThreshold = parseInt(document.getElementById('newProductThreshold').value) || 5;
+    const priority = document.getElementById('newProductPriority').value;
+
+    if (!name) {
+        showNotification('Product name is required', 'warning');
+        return;
+    }
+    if (!category) {
+        showNotification('Please select a category', 'warning');
+        return;
+    }
+
+    const user = getCurrentUser();
+    const result = await addInventoryItem({
+        name,
+        category,
+        unit,
+        currentStock,
+        alertThreshold,
+        priority
+    }, user.email);
+
+    if (result.success) {
+        showNotification(`"${name}" added to inventory!`, 'success');
+        closeModal('addProductModal');
+    } else {
+        showNotification(result.error || 'Error adding product', 'error');
+    }
+};
+
+// =============================================
+// RECIPE CSV IMPORT / EXPORT
+// =============================================
+
+window.downloadRecipeTemplate = function() {
+    const template = 'Recipe Name,Category,Ingredient Name,Quantity,Unit\n' +
+        'Margarita,Cocktails,Tequila,50,ml\n' +
+        'Margarita,Cocktails,Lime Juice,25,ml\n' +
+        'Margarita,Cocktails,Sugar Syrup,10,ml\n' +
+        'Gin Sour,Cocktails,Gin,50,ml\n' +
+        'Gin Sour,Cocktails,Lime Juice,25,ml\n';
+    downloadFile(template, 'recipe_template.csv', 'text/csv');
+    showNotification('Template downloaded! Fill it in and import it back.', 'success');
+};
+
+window.importRecipesFromFile = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const user = getCurrentUser();
+    if (!user || !canManageProducts()) {
+        showNotification('Admin or Manager access required to import recipes', 'error');
+        input.value = '';
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+        if (lines.length < 2) {
+            showNotification('CSV file is empty or has no data rows', 'warning');
+            input.value = '';
+            return;
+        }
+
+        // Parse header
+        const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const nameIdx = header.indexOf('recipe name');
+        const catIdx = header.indexOf('category');
+        const ingIdx = header.indexOf('ingredient name');
+        const qtyIdx = header.indexOf('quantity');
+        const unitIdx = header.indexOf('unit');
+
+        if (nameIdx === -1 || ingIdx === -1 || qtyIdx === -1) {
+            showNotification('CSV must have columns: Recipe Name, Category, Ingredient Name, Quantity, Unit', 'error');
+            input.value = '';
+            return;
+        }
+
+        // Group rows by recipe name
+        const recipeMap = {};
+        const inventoryItems = getInventoryItems();
+        const missingIngredients = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(c => c.trim());
+            const recipeName = cols[nameIdx];
+            const category = cols[catIdx] || 'Uncategorised';
+            const ingredientName = cols[ingIdx];
+            const quantity = parseFloat(cols[qtyIdx]);
+            const unit = cols[unitIdx] || 'ml';
+
+            if (!recipeName || !ingredientName || isNaN(quantity)) continue;
+
+            if (!recipeMap[recipeName]) {
+                recipeMap[recipeName] = { name: recipeName, category, ingredients: [] };
+            }
+
+            // Match ingredient to inventory item (case-insensitive)
+            const match = inventoryItems.find(item =>
+                item.name.toLowerCase() === ingredientName.toLowerCase()
+            );
+
+            if (match) {
+                recipeMap[recipeName].ingredients.push({
+                    inventoryItemId: match.id,
+                    name: match.name,
+                    quantity,
+                    unit
+                });
+            } else {
+                missingIngredients.push({ ingredientName, recipeName });
+                recipeMap[recipeName].ingredients.push({
+                    inventoryItemId: null,
+                    name: ingredientName,
+                    quantity,
+                    unit
+                });
+            }
+        }
+
+        const recipeList = Object.values(recipeMap);
+
+        if (recipeList.length === 0) {
+            showNotification('No valid recipes found in the CSV', 'warning');
+            input.value = '';
+            return;
+        }
+
+        // Handle missing ingredients — offer to create them
+        if (missingIngredients.length > 0) {
+            const uniqueMissing = [...new Map(missingIngredients.map(m => [m.ingredientName.toLowerCase(), m])).values()];
+            const names = uniqueMissing.map(m => m.ingredientName).join(', ');
+
+            const shouldCreate = confirm(
+                `The following ingredients are not in your inventory:\n\n${names}\n\nDo you want to create them as new inventory items?`
+            );
+
+            if (shouldCreate) {
+                for (const missing of uniqueMissing) {
+                    const category = await promptIngredientCategory(missing.ingredientName);
+                    if (!category) continue;
+
+                    const result = await addInventoryItem({
+                        name: missing.ingredientName,
+                        category: category,
+                        currentStock: 0,
+                        unit: 'units'
+                    }, user.email);
+
+                    if (result.success) {
+                        // Update all recipes that reference this ingredient
+                        for (const recipe of recipeList) {
+                            for (const ing of recipe.ingredients) {
+                                if (ing.name.toLowerCase() === missing.ingredientName.toLowerCase() && !ing.inventoryItemId) {
+                                    ing.inventoryItemId = result.data.id;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Remove ingredients that still have no inventory match
+        for (const recipe of recipeList) {
+            recipe.ingredients = recipe.ingredients.filter(ing => ing.inventoryItemId);
+        }
+
+        // Create recipes
+        let created = 0;
+        let skipped = 0;
+        for (const recipeData of recipeList) {
+            if (recipeData.ingredients.length === 0) {
+                skipped++;
+                continue;
+            }
+            const result = await createRecipe(recipeData, user.email);
+            if (result.success) created++;
+            else skipped++;
+        }
+
+        showNotification(`Imported ${created} recipe(s)${skipped > 0 ? `, ${skipped} skipped` : ''}`, 'success');
+    } catch (error) {
+        console.error('CSV Import Error:', error);
+        showNotification('Error reading CSV file', 'error');
+    }
+
+    input.value = '';
+};
+
+/**
+ * Open category picker modal — returns a Promise that resolves with the chosen category
+ */
+let _categoryPickerResolve = null;
+
+function promptIngredientCategory(ingredientName) {
+    return new Promise((resolve) => {
+        _categoryPickerResolve = resolve;
+        const modal = document.getElementById('categoryPickerModal');
+        document.getElementById('categoryPickerSubtitle').textContent = `Choose a category for "${ingredientName}":`;
+        modal.classList.add('show');
+
+        // Attach click handlers
+        modal.querySelectorAll('.category-pick-btn').forEach(btn => {
+            btn.onclick = () => {
+                modal.classList.remove('show');
+                if (_categoryPickerResolve) {
+                    _categoryPickerResolve(btn.dataset.cat);
+                    _categoryPickerResolve = null;
+                }
+            };
+        });
+    });
+}
+
+window.closeCategoryPicker = function() {
+    document.getElementById('categoryPickerModal').classList.remove('show');
+    if (_categoryPickerResolve) {
+        _categoryPickerResolve(null);
+        _categoryPickerResolve = null;
+    }
+};
+
+// =============================================
+// RECIPE INGREDIENT - SEARCHABLE AUTOCOMPLETE
+// =============================================
+
+window.addRecipeIngredientRow = function(ingredient = null) {
+    const list = document.getElementById('recipeIngredientsList');
+
+    const row = document.createElement('div');
+    row.className = 'recipe-ingredient-row';
+    row.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;';
+
+    const selectedName = ingredient?.name || '';
+    const selectedId = ingredient?.inventoryItemId || '';
+    const selectedQty = ingredient?.quantity || '';
+    const selectedUnit = ingredient?.unit || 'ml';
+
+    row.innerHTML = `
+        <div class="ingredient-search-wrapper" style="flex: 2; min-width: 150px; position: relative;">
+            <input type="text" class="search-input recipe-ing-search" placeholder="Type to search ingredient..." value="${escapeHtml(selectedName)}" autocomplete="off">
+            <input type="hidden" class="recipe-inv-id" value="${escapeHtml(selectedId)}">
+            <div class="ingredient-dropdown" style="display: none;"></div>
+        </div>
+        <input type="number" class="recipe-qty-input" placeholder="Qty" value="${selectedQty}" min="0.1" step="0.1" style="flex: 0.7; min-width: 70px;">
+        <select class="filter-select recipe-unit-select" style="flex: 0.7; min-width: 70px;">
+            <option value="ml" ${selectedUnit === 'ml' ? 'selected' : ''}>ml</option>
+            <option value="oz" ${selectedUnit === 'oz' ? 'selected' : ''}>oz</option>
+            <option value="cl" ${selectedUnit === 'cl' ? 'selected' : ''}>cl</option>
+            <option value="units" ${selectedUnit === 'units' ? 'selected' : ''}>units</option>
+            <option value="g" ${selectedUnit === 'g' ? 'selected' : ''}>g</option>
+            <option value="dashes" ${selectedUnit === 'dashes' ? 'selected' : ''}>dashes</option>
+        </select>
+        <button class="btn btn-small btn-secondary" onclick="this.parentElement.remove()" style="color: var(--danger);" title="Remove">&times;</button>
+    `;
+
+    const searchInput = row.querySelector('.recipe-ing-search');
+    const hiddenId = row.querySelector('.recipe-inv-id');
+    const dropdown = row.querySelector('.ingredient-dropdown');
+
+    function renderDropdown(query) {
+        const inventoryItems = getInventoryItems();
+        const q = query.toLowerCase();
+        const matches = q ? inventoryItems.filter(item =>
+            item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q)
+        ) : inventoryItems;
+
+        let html = matches.map(item =>
+            `<div class="ing-option" data-id="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">
+                <strong>${escapeHtml(item.name)}</strong> <span style="color: var(--text-muted); font-size: 0.85em;">(${escapeHtml(item.category)})</span>
+            </div>`
+        ).join('');
+
+        // "Create new" option at the bottom
+        if (q) {
+            html += `<div class="ing-option ing-create-new">+ Create "${escapeHtml(query)}" as new inventory item</div>`;
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = html ? 'block' : 'none';
+
+        // Click handlers
+        dropdown.querySelectorAll('.ing-option').forEach(opt => {
+            opt.addEventListener('mousedown', async (e) => {
+                e.preventDefault();
+                if (opt.classList.contains('ing-create-new')) {
+                    dropdown.style.display = 'none';
+                    const category = await promptIngredientCategory(query);
+                    if (!category) return;
+
+                    const user = getCurrentUser();
+                    const result = await addInventoryItem({
+                        name: query.trim(),
+                        category: category,
+                        currentStock: 0,
+                        unit: 'units'
+                    }, user.email);
+
+                    if (result.success) {
+                        searchInput.value = result.data.name;
+                        hiddenId.value = result.data.id;
+                        showNotification(`"${result.data.name}" added to inventory!`, 'success');
+                    } else {
+                        showNotification('Error creating inventory item', 'error');
+                    }
+                } else {
+                    searchInput.value = opt.dataset.name;
+                    hiddenId.value = opt.dataset.id;
+                }
+                dropdown.style.display = 'none';
+            });
+        });
+    }
+
+    searchInput.addEventListener('input', () => {
+        hiddenId.value = '';
+        renderDropdown(searchInput.value.trim());
+    });
+
+    searchInput.addEventListener('focus', () => {
+        renderDropdown(searchInput.value.trim());
+    });
+
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+    });
+
+    list.appendChild(row);
 };
 
 // AI Functions

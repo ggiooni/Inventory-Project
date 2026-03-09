@@ -34,6 +34,7 @@ Smart Inventory is an AI-powered inventory management system designed for the ho
 - **AI-Powered Insights**: Natural language queries using Groq/Llama 3.3
 - **POS Integration**: Support for Toast, Square, Clover, and Lightspeed
 - **Role-Based Access Control**: Admin, Manager, and Staff permission levels
+- **Recipe Management**: CRUD operations for recipes with ingredient-to-inventory mapping
 - **Responsive Design**: Mobile-first approach with dark mode support
 
 ---
@@ -82,6 +83,7 @@ Smart Inventory is an AI-powered inventory management system designed for the ho
 │  │ - Email/Pass    │  │ - inventory     │  │ - aiChat                │ │
 │  │ - Session Mgmt  │  │ - posConfig     │  │ - getAIPredictions      │ │
 │  │ - Role Mapping  │  │ - mappings      │  │ - generateShoppingList  │ │
+│  │                 │  │ - recipes       │  │                         │ │
 │  └─────────────────┘  └─────────────────┘  └────────────┬────────────┘ │
 └────────────────────────────────────────────────────────────────────────┘
                                                           │
@@ -208,6 +210,7 @@ src/
 │   ├── auth.js            # Authentication & authorization
 │   ├── inventory.js       # Inventory CRUD operations
 │   ├── alerts.js          # Alert generation & management
+│   ├── recipes.js           # Recipe CRUD operations
 │   └── pos-integration.js # POS system connectivity
 ├── services/
 │   └── ai-assistant.js    # AI/LLM integration
@@ -233,6 +236,8 @@ app.js
   │     ├── config/firebase.js
   │     ├── config/constants.js
   │     └── modules/inventory.js
+  ├── modules/recipes.js
+  │     └── config/firebase.js
   └── services/ai-assistant.js
         └── config/constants.js
 ```
@@ -372,6 +377,33 @@ User Message → sendToGroq() → Cloud Function
   "lastSync": Timestamp,
   "mappedItems": 5,
   "autoUpdates": 42
+}
+```
+
+#### `recipes`
+```javascript
+{
+  "id": "auto-generated",
+  "name": "Margarita",
+  "category": "Cocktails",
+  "ingredients": [
+    {
+      "inventoryItemId": "item-123",
+      "name": "Tequila",
+      "quantity": 50,
+      "unit": "ml"
+    },
+    {
+      "inventoryItemId": "item-456",
+      "name": "Lime Juice",
+      "quantity": 25,
+      "unit": "ml"
+    }
+  ],
+  "createdAt": "2026-03-09T...",
+  "createdBy": "admin@inventory.com",
+  "updatedAt": "2026-03-09T...",
+  "updatedBy": "admin@inventory.com"
 }
 ```
 

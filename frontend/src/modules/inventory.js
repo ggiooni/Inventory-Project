@@ -28,6 +28,7 @@ import {
     getDocs,
     doc,
     updateDoc,
+    addDoc,
     onSnapshot,
     serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
@@ -413,6 +414,33 @@ export async function resetToDefaults(updatedBy) {
         success: true,
         updatedCount: successCount
     };
+}
+
+/**
+ * Add a new inventory item to Firestore
+ */
+export async function addInventoryItem(itemData, createdBy) {
+    try {
+        const newItem = {
+            ...itemData,
+            currentStock: itemData.currentStock || 0,
+            alertThreshold: itemData.alertThreshold || 5,
+            priority: itemData.priority || 'medium',
+            lastUpdated: serverTimestamp(),
+            createdBy: createdBy,
+            createdAt: new Date().toISOString()
+        };
+
+        const docRef = await addDoc(collection(db, 'inventory'), newItem);
+        const created = { id: docRef.id, ...newItem };
+        inventoryState.items.push(created);
+        notifyListeners();
+
+        return { success: true, data: created };
+    } catch (error) {
+        console.error('Error adding inventory item:', error);
+        return { success: false, error: error.message };
+    }
 }
 
 // =============================================

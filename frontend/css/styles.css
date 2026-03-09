@@ -709,40 +709,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     display: none;
 }
 
-/* AI Panel - Dark luxe theme */
-.panel.ai-panel {
-    background: #0c0a09;
-    color: #fafaf9;
-    border-color: #292524;
-    position: relative;
-    overflow: hidden;
-}
-
-.panel.ai-panel::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 20% 50%, rgba(180, 83, 9, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
-    pointer-events: none;
-}
-
-.panel.ai-panel > * {
-    position: relative;
-    z-index: 1;
-}
-
-.panel.ai-panel .panel-header {
-    border-bottom-color: rgba(255, 255, 255, 0.06);
-}
-
-.panel.ai-panel .panel-title {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+/* AI Panel - legacy (now used in bubble) */
 
 /* Alerts Panel - Deep warm red */
 .panel.alerts-panel {
@@ -2311,7 +2278,8 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     .top-header,
     .toast-container,
     .modal-overlay,
-    .tour-overlay {
+    .tour-overlay,
+    .ai-bubble {
         display: none !important;
     }
 
@@ -2326,4 +2294,283 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     body::before {
         display: none;
     }
+}
+
+/* ===================================
+   VIEW-BASED ROUTING
+=================================== */
+.view {
+    display: none;
+    animation: viewFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view.active {
+    display: block;
+}
+
+@keyframes viewFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================================
+   FLOATING AI CHAT BUBBLE
+=================================== */
+.ai-bubble {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1500;
+}
+
+.ai-bubble-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0c0a09;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all var(--transition-fast);
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.ai-bubble-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4), 0 0 30px rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+.ai-bubble-icon {
+    position: relative;
+    z-index: 1;
+    transition: transform var(--transition-fast);
+}
+
+.ai-bubble.open .ai-bubble-icon {
+    font-size: 1.2rem;
+}
+
+.ai-bubble-pulse {
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid rgba(251, 191, 36, 0.4);
+    animation: bubblePulse 2.5s ease-in-out infinite;
+}
+
+.ai-bubble.open .ai-bubble-pulse {
+    display: none;
+}
+
+@keyframes bubblePulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0; }
+}
+
+/* Chat panel */
+.ai-bubble-chat {
+    position: absolute;
+    bottom: 68px;
+    right: 0;
+    width: 380px;
+    max-height: 520px;
+    background: #0c0a09;
+    border: 1px solid #292524;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: chatSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ai-bubble-chat::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(180, 83, 9, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: var(--radius-lg);
+}
+
+.ai-bubble-chat > * {
+    position: relative;
+    z-index: 1;
+}
+
+.ai-bubble.open .ai-bubble-chat {
+    display: flex;
+}
+
+@keyframes chatSlideUp {
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ai-bubble-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ai-bubble-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fafaf9;
+}
+
+.ai-bubble-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ai-bubble-close {
+    background: none;
+    border: none;
+    color: #78716c;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color var(--transition-fast);
+}
+
+.ai-bubble-close:hover {
+    color: #fafaf9;
+}
+
+.ai-bubble-suggestions {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ai-bubble-suggestions .ai-suggestion-btn {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+}
+
+.ai-bubble-chat .ai-chat-messages {
+    flex: 1;
+    max-height: 300px;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    padding: 12px 16px;
+}
+
+.ai-bubble-chat .ai-input-container {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ai-bubble-chat .ai-send-btn {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+}
+
+@media (max-width: 480px) {
+    .ai-bubble-chat {
+        width: calc(100vw - 32px);
+        right: -8px;
+        max-height: 70vh;
+    }
+}
+
+/* =============================================
+   INGREDIENT SEARCH AUTOCOMPLETE
+   ============================================= */
+
+.ingredient-search-wrapper {
+    position: relative;
+}
+
+.ingredient-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: var(--surface, #1a1a1a);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    margin-top: 4px;
+}
+
+.ingredient-dropdown .ing-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    transition: background 0.15s;
+}
+
+.ingredient-dropdown .ing-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.ingredient-dropdown .ing-option:last-child {
+    border-bottom: none;
+}
+
+.ingredient-dropdown .ing-create-new {
+    color: var(--accent, #d4915e);
+    font-weight: 600;
+    border-top: 2px solid var(--border);
+    background: rgba(212, 145, 94, 0.05);
+}
+
+.ingredient-dropdown .ing-create-new:hover {
+    background: rgba(212, 145, 94, 0.15);
+}
+
+/* Category Picker Buttons */
+#categoryPickerGrid .category-pick-btn {
+    transition: transform 0.15s, background 0.15s;
+    text-align: center;
+}
+
+#categoryPickerGrid .category-pick-btn:hover {
+    transform: scale(1.03);
+    background: rgba(212, 145, 94, 0.15);
+    border-color: var(--accent, #d4915e);
+}
+
+/* Make recipe modal not clip ingredient dropdown */
+#recipeModal .modal {
+    overflow: visible;
+}
+
+#recipeModal .modal-body {
+    overflow-y: auto;
+    max-height: 65vh;
+}
+
+#recipeIngredientsList {
+    position: relative;
+    overflow: visible;
+}
+
+.recipe-ingredient-row {
+    position: relative;
 }

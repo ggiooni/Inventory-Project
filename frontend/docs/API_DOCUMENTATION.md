@@ -76,8 +76,8 @@ if (result.success) {
 | Role | canModifyStock | canManageProducts | canManagePriorities |
 |------|----------------|-------------------|---------------------|
 | staff | ✓ | ✗ | ✗ |
-| manager | ✓ | ✓ | ✗ |
-| admin | ✓ | ✓ | ✓ |
+| manager | ✓ | ✓ (includes recipes) | ✗ |
+| admin | ✓ | ✓ (includes recipes) | ✓ |
 
 ---
 
@@ -496,6 +496,103 @@ const result = await saveItemMappings(mappings, 'admin@example.com');
 
 ---
 
+### Recipes Module (`modules/recipes.js`)
+
+#### Functions
+
+##### `loadRecipes()`
+
+Load all recipes from Firestore.
+
+```javascript
+const result = await loadRecipes();
+// Returns: { success: boolean, data?: array, error?: string }
+```
+
+##### `createRecipe(recipeData, userEmail)`
+
+Create a new recipe.
+
+```javascript
+const result = await createRecipe({
+    name: 'Margarita',
+    category: 'Cocktails',
+    ingredients: [
+        { inventoryItemId: 'item-123', name: 'Tequila', quantity: 50, unit: 'ml' },
+        { inventoryItemId: 'item-456', name: 'Lime Juice', quantity: 25, unit: 'ml' }
+    ]
+}, 'admin@inventory.com');
+// Returns: { success: boolean, data?: Recipe, error?: string }
+```
+
+##### `updateRecipe(recipeId, recipeData, userEmail)`
+
+Update an existing recipe.
+
+```javascript
+const result = await updateRecipe('recipe-123', updatedData, 'admin@inventory.com');
+// Returns: { success: boolean, data?: Recipe, error?: string }
+```
+
+##### `deleteRecipe(recipeId)`
+
+Delete a recipe.
+
+```javascript
+const result = await deleteRecipe('recipe-123');
+// Returns: { success: boolean, error?: string }
+```
+
+##### `getRecipes()`
+
+Get all recipes (cached).
+
+```javascript
+const recipes = getRecipes();
+// Returns: Array<Recipe>
+```
+
+##### `getRecipeById(id)`
+
+Get a single recipe by ID.
+
+```javascript
+const recipe = getRecipeById('recipe-123');
+// Returns: Recipe | null
+```
+
+##### `onRecipesChange(callback)`
+
+Register a listener for recipe changes.
+
+```javascript
+onRecipesChange((recipes) => {
+    console.log('Recipes updated:', recipes.length);
+});
+```
+
+---
+
+### Inventory Module - New Functions
+
+##### `addInventoryItem(itemData, createdBy)`
+
+Create a new inventory item in Firestore.
+
+```javascript
+const result = await addInventoryItem({
+    name: 'Absolut Vodka',
+    category: 'Spirits',
+    unit: 'bottles',
+    currentStock: 10,
+    alertThreshold: 5,
+    priority: 'high'
+}, 'admin@inventory.com');
+// Returns: { success: boolean, data?: InventoryItem, error?: string }
+```
+
+---
+
 ### AI Assistant Service (`services/ai-assistant.js`)
 
 #### Functions
@@ -642,7 +739,7 @@ All APIs return errors in this format:
 interface InventoryItem {
     id: string;
     name: string;
-    category: 'Spirits' | 'Wines' | 'Beers' | 'Soft Drinks' | 'Syrups';
+    category: 'Spirits' | 'Wines' | 'Beers' | 'Soft Drinks' | 'Syrups' | 'Mixers' | 'Garnishes' | 'Other';
     stock: number;
     priority?: 'high' | 'medium' | 'low';
     alertThreshold?: number;
@@ -663,6 +760,28 @@ interface Alert {
     threshold: number;
     daysUntilEmpty: number;
     suggestedQuantity: number;
+}
+```
+
+### Recipe
+
+```typescript
+interface Recipe {
+    id: string;
+    name: string;
+    category: string;
+    ingredients: RecipeIngredient[];
+    createdAt?: string;
+    createdBy?: string;
+    updatedAt?: string;
+    updatedBy?: string;
+}
+
+interface RecipeIngredient {
+    inventoryItemId: string;
+    name: string;
+    quantity: number;
+    unit: 'ml' | 'oz' | 'cl' | 'units' | 'g' | 'dashes';
 }
 ```
 
