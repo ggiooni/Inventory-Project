@@ -1,0 +1,47 @@
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Gradle
+.gradle/
+
+# Local environment files
+local.properties
+
+# Build folders
+/build/
+/app/build/
+**/build/
+
+# Native build
+.externalNativeBuild
+.cxx
+
+# Android Studio captures
+captures/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# APK / App bundles
+*.apk
+*.aab
+
+# Firebase local debug
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Temporary files
+*.tmp
+*.temp
