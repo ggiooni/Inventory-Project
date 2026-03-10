@@ -58,6 +58,33 @@ service cloud.firestore {
       allow create, update, delete: if isManagerOrAdmin();
     }
 
+    // Mobile App Authorizations: all authenticated users can read, managers/admins can write
+    match /recipes/{recipeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isManagerOrAdmin();
+    }
+    
+    match /tables/{tableId} {
+      allow read: if isAuthenticated()
+      allow create, update, delete: if isManagerOrAdmin();
+    }
+    
+    match /menuItems/{menuItemId} {
+      allow read: if isAuthenticated()
+      allow create, update, delete: if isManagerOrAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isManagerOrAdmin();
+
+    // Order items subcollection
+    match /items/{itemId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isManagerOrAdmin();
+    }
+    }
+
     // User settings (future use)
     match /users/{userId} {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
