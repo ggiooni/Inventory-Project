@@ -43,6 +43,7 @@ firebase-config.local.js
 service-account*.json
 credentials*.json
 CREDENTIALS*.txt
+google-services.json
 CODE_EXPLANATION.md
 
 # Temporary files
