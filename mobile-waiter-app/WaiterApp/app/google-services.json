@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "968201633006",
+    "project_id": "bar-inventory-15a15",
+    "storage_bucket": "bar-inventory-15a15.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:968201633006:android:f36778b95c5ee0fc27c7ff",
+        "android_client_info": {
+          "package_name": "com.example.waiter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVGaNeNvcCNIDRXRJ-jdNHM1VZZ0rkWls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
