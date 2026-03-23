@@ -1431,10 +1431,68 @@ window.submitNewProduct = async function() {
     if (result.success) {
         showNotification(`"${name}" added to inventory!`, 'success');
         closeModal('addProductModal');
+
+        // If opened from recipe ingredient, link back
+        if (_ingredientCallback) {
+            _ingredientCallback(result.data);
+            _ingredientCallback = null;
+        }
     } else {
         showNotification(result.error || 'Error adding product', 'error');
     }
 };
+
+// =============================================
+// CREATE PRODUCT FROM RECIPE INGREDIENT
+// =============================================
+
+let _ingredientCallback = null;
+
+function openAddProductModalForIngredient(ingredientName, searchInput, hiddenId) {
+    _ingredientCallback = (product) => {
+        searchInput.value = product.name;
+        hiddenId.value = product.id;
+    };
+
+    // Open the full product modal pre-filled with the ingredient name
+    if (!canManageProducts()) {
+        showNotification('Admin or Manager access required', 'error');
+        _ingredientCallback = null;
+        return;
+    }
+
+    document.getElementById('newProductName').value = ingredientName;
+    document.getElementById('newProductCategory').value = '';
+    document.getElementById('newProductPackageSize').value = '';
+    document.getElementById('newProductSizeUnit').value = 'ml';
+    document.getElementById('newProductStock').value = '';
+    document.getElementById('newProductThreshold').value = '3';
+    document.getElementById('newProductSellType').value = 'portion';
+    document.getElementById('stockSummary').textContent = '';
+    document.getElementById('portionSizeGroup').style.display = 'block';
+    document.getElementById('newProductPortionSize').value = '';
+    document.getElementById('portionSummary').textContent = '';
+    document.getElementById('portionUnitLabel').textContent = 'ml';
+    document.getElementById('sellTypeHint').textContent = 'Used by measure in cocktails or recipes (e.g. vodka, syrup)';
+    document.querySelectorAll('.sell-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sellType === 'portion');
+    });
+
+    setupCategoryAutocomplete();
+
+    document.getElementById('newProductStock').addEventListener('input', updateStockSummary);
+    document.getElementById('newProductPackageSize').addEventListener('input', updateStockSummary);
+    document.getElementById('newProductSizeUnit').addEventListener('change', () => {
+        updateStockSummary();
+        document.getElementById('portionUnitLabel').textContent = document.getElementById('newProductSizeUnit').value;
+        updatePortionSummary();
+    });
+    document.getElementById('newProductPortionSize').addEventListener('input', updatePortionSummary);
+    document.getElementById('newProductPackageSize').addEventListener('input', updatePortionSummary);
+    document.getElementById('newProductStock').addEventListener('input', updatePortionSummary);
+
+    document.getElementById('addProductModal').classList.add('show');
+}
 
 // =============================================
 // RECIPE CSV IMPORT / EXPORT
@@ -1770,24 +1828,9 @@ window.addRecipeIngredientRow = function(ingredient = null) {
                 e.preventDefault();
                 if (opt.classList.contains('ing-create-new')) {
                     dropdown.style.display = 'none';
-                    const category = await promptIngredientCategory(query);
-                    if (!category) return;
-
-                    const user = getCurrentUser();
-                    const result = await addInventoryItem({
-                        name: query.trim(),
-                        category: category,
-                        currentStock: 0,
-                        unit: 'units'
-                    }, user.email);
-
-                    if (result.success) {
-                        searchInput.value = result.data.name;
-                        hiddenId.value = result.data.id;
-                        showNotification(`"${result.data.name}" added to inventory!`, 'success');
-                    } else {
-                        showNotification('Error creating inventory item', 'error');
-                    }
+                    // Open the full New Product modal pre-filled, then link back
+                    openAddProductModalForIngredient(query.trim(), searchInput, hiddenId);
+                    return;
                 } else {
                     searchInput.value = opt.dataset.name;
                     hiddenId.value = opt.dataset.id;
