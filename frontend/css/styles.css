@@ -1,5 +1,5 @@
 /* ===================================
-   SMART INVENTORY - INDUSTRIAL HOSPITALITY
+   SMART INVENTORY - MODERN PROFESSIONAL
    BSc Computer Science - Final Year Project
    Dorset College Dublin
 =================================== */
@@ -8,45 +8,45 @@
    CSS VARIABLES (THEMING)
 =================================== */
 :root {
-    /* Light Theme (Default) - Warm Industrial */
-    --bg-primary: #f4f1ec;
+    /* Light Theme (Default) - Clean Professional */
+    --bg-primary: #f9fafb;
     --bg-secondary: #ffffff;
-    --bg-tertiary: #ebe7e0;
-    --text-primary: #1c1917;
-    --text-secondary: #44403c;
-    --text-muted: #78716c;
-    --border-color: #d6d3d1;
-    --shadow-color: rgba(28, 25, 23, 0.08);
-    --shadow-elevated: rgba(28, 25, 23, 0.15);
+    --bg-tertiary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --border-color: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --shadow-elevated: rgba(0, 0, 0, 0.1);
 
-    /* Accent Colors - Copper & Amber */
-    --accent-primary: #b45309;
-    --accent-secondary: #92400e;
-    --accent-light: #fbbf24;
-    --accent-gradient: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
-    --accent-glow: rgba(180, 83, 9, 0.15);
+    /* Accent Colors - Professional Blue */
+    --accent-primary: #3b82f6;
+    --accent-secondary: #2563eb;
+    --accent-light: #60a5fa;
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+    --accent-glow: rgba(59, 130, 246, 0.15);
 
-    /* Status Colors - Muted & Refined */
-    --success: #16a34a;
-    --success-light: rgba(22, 163, 74, 0.08);
-    --warning: #ca8a04;
-    --warning-light: rgba(202, 138, 4, 0.08);
-    --danger: #dc2626;
-    --danger-light: rgba(220, 38, 38, 0.06);
-    --info: #2563eb;
-    --info-light: rgba(37, 99, 235, 0.06);
+    /* Status Colors */
+    --success: #10b981;
+    --success-light: rgba(16, 185, 129, 0.08);
+    --warning: #f59e0b;
+    --warning-light: rgba(245, 158, 11, 0.08);
+    --danger: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.06);
+    --info: #3b82f6;
+    --info-light: rgba(59, 130, 246, 0.06);
 
     /* Sidebar */
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 70px;
-    --sidebar-bg: #1c1917;
-    --sidebar-text: #e7e5e4;
+    --sidebar-bg: #111827;
+    --sidebar-text: #e5e7eb;
     --sidebar-hover: rgba(255, 255, 255, 0.06);
-    --sidebar-active: rgba(180, 83, 9, 0.25);
+    --sidebar-active: rgba(59, 130, 246, 0.25);
 
     /* Header */
     --header-height: 64px;
-    --header-bg: rgba(255, 255, 255, 0.85);
+    --header-bg: rgba(255, 255, 255, 0.9);
 
     /* Transitions */
     --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -55,27 +55,27 @@
 
     /* Border Radius */
     --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 20px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
 
-    /* Grain overlay */
-    --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    /* Grain overlay - disabled for clean look */
+    --grain: none;
 }
 
 /* Dark Theme */
 [data-theme="dark"] {
-    --bg-primary: #0c0a09;
-    --bg-secondary: #1c1917;
-    --bg-tertiary: #292524;
-    --text-primary: #fafaf9;
-    --text-secondary: #d6d3d1;
-    --text-muted: #a8a29e;
-    --border-color: #44403c;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
     --shadow-color: rgba(0, 0, 0, 0.3);
     --shadow-elevated: rgba(0, 0, 0, 0.5);
-    --header-bg: rgba(28, 25, 23, 0.9);
-    --accent-glow: rgba(251, 191, 36, 0.1);
+    --header-bg: rgba(15, 23, 42, 0.9);
+    --accent-glow: rgba(59, 130, 246, 0.15);
 }
 
 /* ===================================
@@ -93,7 +93,7 @@ html {
 }
 
 body {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
@@ -103,25 +103,17 @@ body {
     letter-spacing: -0.01em;
 }
 
-/* Subtle grain texture overlay */
+/* Clean background - no grain overlay */
 body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: var(--grain);
-    background-repeat: repeat;
-    background-size: 256px;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.5;
+    display: none;
 }
 
 /* ===================================
    TYPOGRAPHY HELPERS
 =================================== */
 h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-title, .tour-tooltip-title {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-weight: 400;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 600;
     letter-spacing: -0.02em;
 }
 
@@ -172,15 +164,9 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* Sidebar - clean, no grain */
 .sidebar::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: var(--grain);
-    background-repeat: repeat;
-    background-size: 256px;
-    pointer-events: none;
-    opacity: 0.3;
+    display: none;
 }
 
 .sidebar > * {
@@ -211,11 +197,11 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     justify-content: center;
     font-size: 1.4rem;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .sidebar-title {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 1.35rem;
     font-weight: 400;
     white-space: nowrap;
@@ -269,7 +255,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .nav-section-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 1.5px;
@@ -389,7 +375,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     font-weight: 600;
     flex-shrink: 0;
     font-size: 0.85rem;
-    box-shadow: 0 2px 8px rgba(180, 83, 9, 0.25);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .user-details {
@@ -489,7 +475,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-color: var(--accent-primary);
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.2);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .header-btn .notification-dot {
@@ -609,7 +595,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .stat-value {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 2rem;
     font-weight: 400;
     color: var(--text-primary);
@@ -677,7 +663,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     padding: 2px 10px;
     border-radius: 10px;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .panel-header-right {
@@ -744,7 +730,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     padding: 6px 12px;
     border-radius: var(--radius-xl);
     font-size: 0.78rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     letter-spacing: 0;
 }
@@ -753,7 +739,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #fbbf24;
+    background: #60a5fa;
     animation: ai-pulse 2s infinite;
 }
 
@@ -777,7 +763,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-xl);
     cursor: pointer;
     font-size: 0.82rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     transition: all var(--transition-fast);
     white-space: nowrap;
 }
@@ -785,7 +771,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 .ai-suggestion-btn:hover {
     background: rgba(251, 191, 36, 0.1);
     border-color: rgba(251, 191, 36, 0.3);
-    color: #fbbf24;
+    color: #60a5fa;
     transform: translateY(-2px);
 }
 
@@ -856,7 +842,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     padding: 14px 20px;
     border-radius: var(--radius-xl);
     font-size: 0.95rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     transition: all var(--transition-fast);
 }
 
@@ -880,7 +866,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     cursor: pointer;
     font-size: 0.92rem;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
@@ -889,7 +875,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 
 .ai-send-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(180, 83, 9, 0.35);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
 }
 
 .ai-send-btn:disabled {
@@ -941,7 +927,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-xl);
     font-weight: 600;
     font-size: 0.8rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .alert-counter.urgent {
@@ -979,7 +965,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .alert-card.urgent {
-    border-left-color: #fbbf24;
+    border-left-color: #60a5fa;
     background: rgba(251, 191, 36, 0.08);
 }
 
@@ -996,7 +982,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 .alert-card h4 {
     margin: 0 0 8px 0;
     font-size: 0.95rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -1016,7 +1002,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     letter-spacing: 0.5px;
 }
 
@@ -1039,7 +1025,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 0.78rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     transition: all var(--transition-fast);
 }
@@ -1074,7 +1060,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 .pos-stat-card h3 {
     margin: 0 0 10px 0;
     font-size: 0.95rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     opacity: 0.8;
 }
@@ -1085,7 +1071,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-xl);
     font-weight: 600;
     font-size: 0.82rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: rgba(255, 255, 255, 0.15);
 }
 
@@ -1093,7 +1079,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 .status-badge.disconnected { background: var(--danger); color: white; }
 
 .stat-number {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 2.5rem;
     font-weight: 400;
     margin: 10px 0;
@@ -1113,7 +1099,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 0.78rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     transition: all var(--transition-fast);
     margin-top: 10px;
@@ -1158,7 +1144,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 0.92rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: all var(--transition-fast);
@@ -1175,7 +1161,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 0.92rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     min-width: 150px;
@@ -1202,7 +1188,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-md);
     font-size: 0.9rem;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     cursor: pointer;
     transition: all var(--transition-fast);
     text-decoration: none;
@@ -1212,12 +1198,12 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 .btn-primary {
     background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 2px 8px rgba(180, 83, 9, 0.2);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(180, 83, 9, 0.3);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
@@ -1374,7 +1360,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .stock-value {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 1.35rem;
     font-weight: 400;
 }
@@ -1395,7 +1381,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-size: 0.78rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
 }
@@ -1406,7 +1392,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-size: 0.78rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     text-align: center;
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -1520,6 +1506,51 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-top: 1px solid var(--border-color);
 }
 
+/* Autocomplete suggestions dropdown */
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px var(--shadow-elevated);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.autocomplete-suggestions .suggestion-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background var(--transition-fast);
+}
+
+.autocomplete-suggestions .suggestion-item:hover,
+.autocomplete-suggestions .suggestion-item.active {
+    background: var(--bg-tertiary);
+}
+
+.autocomplete-suggestions .suggestion-item.create-new {
+    color: var(--accent-primary);
+    font-weight: 500;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Sell type toggle buttons */
+.sell-type-btn {
+    transition: all var(--transition-fast) !important;
+    border: 2px solid var(--border-color) !important;
+}
+
+.sell-type-btn.active {
+    border-color: var(--accent-primary) !important;
+    background: var(--accent-glow) !important;
+    color: var(--accent-primary) !important;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -1539,7 +1570,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 0.95rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: all var(--transition-fast);
@@ -1681,13 +1712,13 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     max-width: 360px;
     z-index: 4002;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(180, 83, 9, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.15);
 }
 
 .tour-tooltip-title {
     font-size: 1.2rem;
     margin-bottom: 8px;
-    color: #1c1917;
+    color: #111827;
 }
 
 .tour-tooltip-content {
@@ -1757,7 +1788,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0c0a09;
+    background: #0f172a;
     z-index: 10000;
     display: flex;
     align-items: center;
@@ -1772,7 +1803,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 30% 20%, rgba(180, 83, 9, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
         radial-gradient(ellipse at 70% 80%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 50%, rgba(146, 64, 14, 0.05) 0%, transparent 60%);
     animation: loginAmbient 8s ease-in-out infinite alternate;
@@ -1831,11 +1862,11 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     justify-content: center;
     font-size: 2.2rem;
     margin: 0 auto 28px;
-    box-shadow: 0 8px 32px rgba(180, 83, 9, 0.4);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
 }
 
 .login-title {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 2rem;
     font-weight: 400;
     margin-bottom: 8px;
@@ -1857,7 +1888,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
     font-size: 0.95rem;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin-bottom: 14px;
     background: rgba(255, 255, 255, 0.04);
     color: #fafaf9;
@@ -1884,17 +1915,17 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     border-radius: var(--radius-md);
     font-size: 0.95rem;
     font-weight: 600;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     cursor: pointer;
     transition: all var(--transition-fast);
     margin-top: 6px;
-    box-shadow: 0 4px 16px rgba(180, 83, 9, 0.3);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     letter-spacing: 0.02em;
 }
 
 .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(180, 83, 9, 0.45);
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.45);
 }
 
 .login-btn:disabled {
@@ -1954,7 +1985,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .empty-state-title {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 1.3rem;
     margin-bottom: 8px;
     color: var(--text-secondary);
@@ -2327,7 +2358,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #0c0a09;
+    background: #0f172a;
     border: 1px solid rgba(251, 191, 36, 0.3);
     color: white;
     cursor: pointer;
@@ -2380,8 +2411,8 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     right: 0;
     width: 380px;
     max-height: 520px;
-    background: #0c0a09;
-    border: 1px solid #292524;
+    background: #0f172a;
+    border: 1px solid #334155;
     border-radius: var(--radius-lg);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
     display: none;
@@ -2395,7 +2426,7 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 20% 50%, rgba(180, 83, 9, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
     pointer-events: none;
     border-radius: var(--radius-lg);
@@ -2431,9 +2462,9 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .ai-bubble-title {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 1.1rem;
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

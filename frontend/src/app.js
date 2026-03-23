@@ -340,12 +340,19 @@ function updateStatsDisplay() {
     if (lowEl) lowEl.textContent = stats.lowStock;
     if (goodEl) goodEl.textContent = stats.goodStock;
 
-    // Update sidebar badges
+    // Update sidebar badges — only show when there are real alerts
     const alertBadge = document.getElementById('alertBadge');
     const urgentBadge = document.getElementById('urgentBadge');
+    const alertTotal = stats.urgent + stats.lowStock;
 
-    if (alertBadge) alertBadge.textContent = stats.urgent + stats.lowStock;
-    if (urgentBadge) urgentBadge.textContent = stats.urgent;
+    if (alertBadge) {
+        alertBadge.textContent = alertTotal;
+        alertBadge.style.display = alertTotal > 0 ? 'inline-flex' : 'none';
+    }
+    if (urgentBadge) {
+        urgentBadge.textContent = stats.urgent;
+        urgentBadge.style.display = stats.urgent > 0 ? 'inline-flex' : 'none';
+    }
 }
 
 /**
@@ -1218,6 +1225,91 @@ window.deleteRecipeAction = async function(recipeId, recipeName) {
 // ADD NEW PRODUCT
 // =============================================
 
+const DEFAULT_CATEGORIES = ['Spirits', 'Wines', 'Beers', 'Soft Drinks', 'Juices', 'Syrups & Mixers', 'Garnishes', 'Dairy', 'Produce', 'Other'];
+
+function getAllCategories() {
+    const items = getInventoryItems();
+    const existing = new Set(items.map(i => i.category).filter(Boolean));
+    DEFAULT_CATEGORIES.forEach(c => existing.add(c));
+    return [...existing].sort();
+}
+
+function setupCategoryAutocomplete() {
+    const input = document.getElementById('newProductCategory');
+    const suggestionsEl = document.getElementById('categorySuggestions');
+    if (!input || !suggestionsEl) return;
+
+    input.addEventListener('input', () => {
+        const val = input.value.trim().toLowerCase();
+        const all = getAllCategories();
+        const matches = val ? all.filter(c => c.toLowerCase().includes(val)) : all;
+
+        if (matches.length === 0 && val) {
+            suggestionsEl.innerHTML = `<div class="suggestion-item create-new" data-value="${input.value.trim()}">+ Create "${input.value.trim()}"</div>`;
+            suggestionsEl.style.display = 'block';
+        } else if (matches.length > 0) {
+            let html = matches.map(c => `<div class="suggestion-item" data-value="${c}">${c}</div>`).join('');
+            if (val && !matches.some(c => c.toLowerCase() === val)) {
+                html += `<div class="suggestion-item create-new" data-value="${input.value.trim()}">+ Create "${input.value.trim()}"</div>`;
+            }
+            suggestionsEl.innerHTML = html;
+            suggestionsEl.style.display = 'block';
+        } else {
+            suggestionsEl.style.display = 'none';
+        }
+    });
+
+    input.addEventListener('focus', () => {
+        if (!input.value.trim()) {
+            const all = getAllCategories();
+            suggestionsEl.innerHTML = all.map(c => `<div class="suggestion-item" data-value="${c}">${c}</div>`).join('');
+            suggestionsEl.style.display = 'block';
+        }
+    });
+
+    suggestionsEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (item) {
+            input.value = item.dataset.value;
+            suggestionsEl.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.form-group')) {
+            suggestionsEl.style.display = 'none';
+        }
+    });
+}
+
+function updateStockSummary() {
+    const qty = parseInt(document.getElementById('newProductStock').value) || 0;
+    const size = parseFloat(document.getElementById('newProductPackageSize').value) || 0;
+    const sizeUnit = document.getElementById('newProductSizeUnit').value;
+    const summary = document.getElementById('stockSummary');
+    if (!summary) return;
+
+    if (qty > 0 && size > 0) {
+        const total = qty * size;
+        summary.textContent = `Total: ${qty} units x ${size}${sizeUnit} = ${total}${sizeUnit}`;
+    } else {
+        summary.textContent = '';
+    }
+}
+
+window.selectSellType = function(type) {
+    document.getElementById('newProductSellType').value = type;
+    document.querySelectorAll('.sell-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sellType === type);
+    });
+    const hint = document.getElementById('sellTypeHint');
+    if (hint) {
+        hint.textContent = type === 'whole'
+            ? 'Sell the full bottle/unit (e.g. wine, beer, soda)'
+            : 'Used by measure in cocktails or recipes (e.g. vodka, syrup)';
+    }
+};
+
 window.openAddProductModal = function() {
     if (!canManageProducts()) {
         showNotification('Admin or Manager access required', 'error');
@@ -1226,10 +1318,24 @@ window.openAddProductModal = function() {
 
     document.getElementById('newProductName').value = '';
     document.getElementById('newProductCategory').value = '';
-    document.getElementById('newProductUnit').value = 'bottles';
-    document.getElementById('newProductStock').value = '0';
-    document.getElementById('newProductThreshold').value = '5';
-    document.getElementById('newProductPriority').value = 'medium';
+    document.getElementById('newProductPackageSize').value = '';
+    document.getElementById('newProductSizeUnit').value = 'ml';
+    document.getElementById('newProductStock').value = '';
+    document.getElementById('newProductThreshold').value = '3';
+    document.getElementById('newProductSellType').value = 'whole';
+    document.getElementById('stockSummary').textContent = '';
+    document.querySelectorAll('.sell-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sellType === 'whole');
+    });
+    document.getElementById('sellTypeHint').textContent = 'Sell the full bottle/unit (e.g. wine, beer, soda)';
+
+    setupCategoryAutocomplete();
+
+    // Live stock summary update
+    document.getElementById('newProductStock').addEventListener('input', updateStockSummary);
+    document.getElementById('newProductPackageSize').addEventListener('input', updateStockSummary);
+    document.getElementById('newProductSizeUnit').addEventListener('change', updateStockSummary);
+
     document.getElementById('addProductModal').classList.add('show');
 };
 
@@ -1240,18 +1346,23 @@ window.submitNewProduct = async function() {
     }
 
     const name = document.getElementById('newProductName').value.trim();
-    const category = document.getElementById('newProductCategory').value;
-    const unit = document.getElementById('newProductUnit').value;
+    const category = document.getElementById('newProductCategory').value.trim();
+    const packageSize = parseFloat(document.getElementById('newProductPackageSize').value) || 0;
+    const sizeUnit = document.getElementById('newProductSizeUnit').value;
     const currentStock = parseInt(document.getElementById('newProductStock').value) || 0;
-    const alertThreshold = parseInt(document.getElementById('newProductThreshold').value) || 5;
-    const priority = document.getElementById('newProductPriority').value;
+    const alertThreshold = parseInt(document.getElementById('newProductThreshold').value) || 3;
+    const sellType = document.getElementById('newProductSellType').value;
 
     if (!name) {
         showNotification('Product name is required', 'warning');
         return;
     }
     if (!category) {
-        showNotification('Please select a category', 'warning');
+        showNotification('Please enter a category', 'warning');
+        return;
+    }
+    if (!packageSize) {
+        showNotification('Please enter the package size', 'warning');
         return;
     }
 
@@ -1259,10 +1370,14 @@ window.submitNewProduct = async function() {
     const result = await addInventoryItem({
         name,
         category,
-        unit,
+        packageSize,
+        sizeUnit,
+        unit: sizeUnit,
         currentStock,
+        totalVolume: currentStock * packageSize,
         alertThreshold,
-        priority
+        sellType,
+        priority: 'medium'
     }, user.email);
 
     if (result.success) {

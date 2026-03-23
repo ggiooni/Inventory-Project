@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- LOGIN SCREEN -->
@@ -43,7 +43,7 @@
                     <a class="nav-item active" data-section="inventory" onclick="navigateTo('inventory')">
                         <span class="nav-item-icon">&#128230;</span>
                         <span class="nav-item-text">Inventory</span>
-                        <span class="nav-item-badge" id="alertBadge">0</span>
+                        <span class="nav-item-badge" id="alertBadge" style="display: none;">0</span>
                     </a>
                 </div>
 
@@ -56,7 +56,7 @@
                     <a class="nav-item" data-section="alerts" onclick="navigateTo('alerts')">
                         <span class="nav-item-icon">&#128276;</span>
                         <span class="nav-item-text">Alerts</span>
-                        <span class="nav-item-badge urgent" id="urgentBadge">0</span>
+                        <span class="nav-item-badge urgent" id="urgentBadge" style="display: none;">0</span>
                     </a>
                 </div>
 
@@ -517,52 +517,55 @@
     <div class="modal-overlay" id="addProductModal">
         <div class="modal" style="max-width: 550px;">
             <div class="modal-header">
-                <h3 class="modal-title">&#43; New Inventory Product</h3>
+                <h3 class="modal-title">&#43; New Product</h3>
                 <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label>Product Name</label>
-                    <input type="text" id="newProductName" placeholder="e.g. Absolut Vodka 700ml" class="search-input">
+                    <input type="text" id="newProductName" placeholder="e.g. Absolut Vodka, Merlot Reserve" class="search-input">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                     <label>Category</label>
-                    <select id="newProductCategory" class="filter-select">
-                        <option value="">Select category...</option>
-                        <option value="Spirits">Spirits</option>
-                        <option value="Wines">Wines</option>
-                        <option value="Beers">Beers & Kegs</option>
-                        <option value="Soft Drinks">Soft Drinks</option>
-                        <option value="Syrups">Syrups & Mixers</option>
-                        <option value="Garnishes">Garnishes</option>
-                        <option value="Other">Other</option>
-                    </select>
+                    <input type="text" id="newProductCategory" placeholder="Type to search or create..." class="search-input" autocomplete="off">
+                    <div id="categorySuggestions" class="autocomplete-suggestions" style="display: none;"></div>
                 </div>
                 <div class="form-group">
-                    <label>Unit</label>
-                    <select id="newProductUnit" class="filter-select">
-                        <option value="bottles">Bottles</option>
-                        <option value="units">Units</option>
-                        <option value="kegs">Kegs</option>
-                        <option value="litres">Litres</option>
-                        <option value="kg">Kg</option>
-                    </select>
+                    <label>Package Size <span style="color: var(--text-muted); font-weight: 400;">(how much in each unit)</span></label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="newProductPackageSize" min="0" step="any" placeholder="e.g. 700" class="search-input" style="flex: 1;">
+                        <select id="newProductSizeUnit" class="filter-select" style="width: 100px;">
+                            <option value="ml">ml</option>
+                            <option value="L">L</option>
+                            <option value="g">g</option>
+                            <option value="kg">kg</option>
+                            <option value="units">units</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Initial Stock</label>
-                    <input type="number" id="newProductStock" min="0" value="0" step="1" class="search-input">
+                    <label>Quantity in Stock <span style="color: var(--text-muted); font-weight: 400;">(how many do you have)</span></label>
+                    <input type="number" id="newProductStock" min="0" value="0" step="1" class="search-input" placeholder="e.g. 6 bottles">
+                    <small id="stockSummary" style="color: var(--text-muted); margin-top: 4px; display: block;"></small>
                 </div>
                 <div class="form-group">
-                    <label>Alert Threshold (low stock warning at)</label>
-                    <input type="number" id="newProductThreshold" min="0" value="5" step="1" class="search-input">
+                    <label>Alert me when below <span style="color: var(--text-muted); font-weight: 400;">(units)</span></label>
+                    <input type="number" id="newProductThreshold" min="0" value="3" step="1" class="search-input" placeholder="e.g. 3">
                 </div>
                 <div class="form-group">
-                    <label>Priority</label>
-                    <select id="newProductPriority" class="filter-select">
-                        <option value="high">High</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="low">Low</option>
-                    </select>
+                    <label>How is this sold?</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary sell-type-btn active" data-sell-type="whole" onclick="selectSellType('whole')" style="flex: 1;">
+                            &#127863; Whole unit
+                        </button>
+                        <button type="button" class="btn btn-secondary sell-type-btn" data-sell-type="portion" onclick="selectSellType('portion')" style="flex: 1;">
+                            &#127864; By portion
+                        </button>
+                    </div>
+                    <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+                        <span id="sellTypeHint">Sell the full bottle/unit (e.g. wine, beer, soda)</span>
+                    </small>
+                    <input type="hidden" id="newProductSellType" value="whole">
                 </div>
             </div>
             <div class="modal-footer">
