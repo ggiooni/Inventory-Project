@@ -2580,8 +2580,12 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 #recipeModal .modal-body {
+    overflow: visible;
+}
+
+#recipeModal .modal {
+    max-height: 90vh;
     overflow-y: auto;
-    max-height: 65vh;
 }
 
 #recipeIngredientsList {
