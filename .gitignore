@@ -46,6 +46,10 @@ CREDENTIALS*.txt
 google-services.json
 CODE_EXPLANATION.md
 
+# Claude Code
+CLAUDE.md
+.claude/
+
 # Temporary files
 tmp/
 temp/
