@@ -2533,18 +2533,14 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
 }
 
 .ingredient-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 9999;
+    position: fixed;
+    z-index: 99999;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     max-height: 200px;
     overflow-y: auto;
     box-shadow: 0 8px 24px var(--shadow-elevated);
-    margin-top: 4px;
 }
 
 .ingredient-dropdown .ing-option {
@@ -2574,18 +2570,14 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     background: var(--accent-glow);
 }
 
-/* Make recipe modal not clip ingredient dropdown */
+/* Recipe modal - no overflow clipping so dropdowns render above */
 #recipeModal .modal {
     overflow: visible;
+    max-height: none;
 }
 
 #recipeModal .modal-body {
     overflow: visible;
-}
-
-#recipeModal .modal {
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 #recipeIngredientsList {

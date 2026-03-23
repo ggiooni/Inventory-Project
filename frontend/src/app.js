@@ -1820,7 +1820,16 @@ window.addRecipeIngredientRow = function(ingredient = null) {
         }
 
         dropdown.innerHTML = html;
-        dropdown.style.display = html ? 'block' : 'none';
+        if (html) {
+            const rect = searchInput.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
 
         // Click handlers
         dropdown.querySelectorAll('.ing-option').forEach(opt => {
