@@ -1105,6 +1105,7 @@ window.openCreateRecipeModal = function() {
     // Add one empty ingredient row
     window.addRecipeIngredientRow();
 
+    setupRecipeCategoryAutocomplete();
     document.getElementById('recipeModal').classList.add('show');
 };
 
@@ -1134,6 +1135,7 @@ window.openEditRecipeModal = function(recipeId) {
         window.addRecipeIngredientRow(ing);
     });
 
+    setupRecipeCategoryAutocomplete();
     document.getElementById('recipeModal').classList.add('show');
 };
 
@@ -1297,16 +1299,41 @@ function updateStockSummary() {
     }
 }
 
+function updatePortionSummary() {
+    const portionSize = parseFloat(document.getElementById('newProductPortionSize').value) || 0;
+    const packageSize = parseFloat(document.getElementById('newProductPackageSize').value) || 0;
+    const sizeUnit = document.getElementById('newProductSizeUnit').value;
+    const qty = parseInt(document.getElementById('newProductStock').value) || 0;
+    const summary = document.getElementById('portionSummary');
+    if (!summary) return;
+
+    if (portionSize > 0 && packageSize > 0) {
+        const servesPerUnit = Math.floor(packageSize / portionSize);
+        const totalServes = servesPerUnit * qty;
+        summary.textContent = `~${servesPerUnit} serves per unit${qty > 0 ? ` (${totalServes} total from ${qty} units)` : ''}`;
+    } else {
+        summary.textContent = '';
+    }
+}
+
 window.selectSellType = function(type) {
     document.getElementById('newProductSellType').value = type;
     document.querySelectorAll('.sell-type-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.sellType === type);
     });
     const hint = document.getElementById('sellTypeHint');
+    const portionGroup = document.getElementById('portionSizeGroup');
     if (hint) {
         hint.textContent = type === 'whole'
             ? 'Sell the full bottle/unit (e.g. wine, beer, soda)'
             : 'Used by measure in cocktails or recipes (e.g. vodka, syrup)';
+    }
+    if (portionGroup) {
+        portionGroup.style.display = type === 'portion' ? 'block' : 'none';
+        if (type === 'portion') {
+            const sizeUnit = document.getElementById('newProductSizeUnit').value;
+            document.getElementById('portionUnitLabel').textContent = sizeUnit;
+        }
     }
 };
 
@@ -1329,12 +1356,27 @@ window.openAddProductModal = function() {
     });
     document.getElementById('sellTypeHint').textContent = 'Sell the full bottle/unit (e.g. wine, beer, soda)';
 
+    document.getElementById('portionSizeGroup').style.display = 'none';
+    document.getElementById('newProductPortionSize').value = '';
+    document.getElementById('portionSummary').textContent = '';
+
     setupCategoryAutocomplete();
 
     // Live stock summary update
     document.getElementById('newProductStock').addEventListener('input', updateStockSummary);
     document.getElementById('newProductPackageSize').addEventListener('input', updateStockSummary);
-    document.getElementById('newProductSizeUnit').addEventListener('change', updateStockSummary);
+    document.getElementById('newProductSizeUnit').addEventListener('change', () => {
+        updateStockSummary();
+        // Sync portion unit label
+        const sizeUnit = document.getElementById('newProductSizeUnit').value;
+        document.getElementById('portionUnitLabel').textContent = sizeUnit;
+        updatePortionSummary();
+    });
+
+    // Live portion summary update
+    document.getElementById('newProductPortionSize').addEventListener('input', updatePortionSummary);
+    document.getElementById('newProductPackageSize').addEventListener('input', updatePortionSummary);
+    document.getElementById('newProductStock').addEventListener('input', updatePortionSummary);
 
     document.getElementById('addProductModal').classList.add('show');
 };
@@ -1352,6 +1394,7 @@ window.submitNewProduct = async function() {
     const currentStock = parseInt(document.getElementById('newProductStock').value) || 0;
     const alertThreshold = parseInt(document.getElementById('newProductThreshold').value) || 3;
     const sellType = document.getElementById('newProductSellType').value;
+    const portionSize = parseFloat(document.getElementById('newProductPortionSize').value) || 0;
 
     if (!name) {
         showNotification('Product name is required', 'warning');
@@ -1363,6 +1406,10 @@ window.submitNewProduct = async function() {
     }
     if (!packageSize) {
         showNotification('Please enter the package size', 'warning');
+        return;
+    }
+    if (sellType === 'portion' && !portionSize) {
+        showNotification('Please enter the portion size', 'warning');
         return;
     }
 
@@ -1377,6 +1424,7 @@ window.submitNewProduct = async function() {
         totalVolume: currentStock * packageSize,
         alertThreshold,
         sellType,
+        portionSize: sellType === 'portion' ? portionSize : packageSize,
         priority: 'medium'
     }, user.email);
 
@@ -1555,25 +1603,99 @@ window.importRecipesFromFile = async function(input) {
  */
 let _categoryPickerResolve = null;
 
+const DEFAULT_RECIPE_CATEGORIES = ['Cocktails', 'Shots', 'Mocktails', 'Hot Drinks', 'Beer Mixes', 'Wine Cocktails', 'Smoothies', 'Other'];
+
+function getAllRecipeCategories() {
+    const existing = new Set(getRecipeCategories());
+    DEFAULT_RECIPE_CATEGORIES.forEach(c => existing.add(c));
+    return [...existing].sort();
+}
+
+function setupRecipeCategoryAutocomplete() {
+    const input = document.getElementById('recipeCategory');
+    const suggestionsEl = document.getElementById('recipeCategorySuggestions');
+    if (!input || !suggestionsEl) return;
+
+    function renderSuggestions(val) {
+        const allCats = getAllRecipeCategories();
+        const matches = val ? allCats.filter(c => c.toLowerCase().includes(val.toLowerCase())) : allCats;
+        let html = matches.map(c => `<div class="suggestion-item" data-value="${c}">${c}</div>`).join('');
+        if (val && !matches.some(c => c.toLowerCase() === val.toLowerCase())) {
+            html += `<div class="suggestion-item create-new" data-value="${val}">+ Create "${val}"</div>`;
+        }
+        suggestionsEl.innerHTML = html;
+        suggestionsEl.style.display = html ? 'block' : 'none';
+    }
+
+    input.oninput = () => renderSuggestions(input.value.trim());
+    input.onfocus = () => renderSuggestions(input.value.trim());
+
+    suggestionsEl.onclick = (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (item) {
+            input.value = item.dataset.value;
+            suggestionsEl.style.display = 'none';
+        }
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#recipeCategory') && !e.target.closest('#recipeCategorySuggestions')) {
+            suggestionsEl.style.display = 'none';
+        }
+    });
+}
+
+function setupCategoryPickerAutocomplete() {
+    const input = document.getElementById('categoryPickerInput');
+    const suggestionsEl = document.getElementById('categoryPickerSuggestions');
+    if (!input || !suggestionsEl) return;
+
+    const allCats = getAllCategories();
+
+    function renderSuggestions(val) {
+        const matches = val ? allCats.filter(c => c.toLowerCase().includes(val.toLowerCase())) : allCats;
+        let html = matches.map(c => `<div class="suggestion-item" data-value="${c}">${c}</div>`).join('');
+        if (val && !matches.some(c => c.toLowerCase() === val.toLowerCase())) {
+            html += `<div class="suggestion-item create-new" data-value="${val}">+ Create "${val}"</div>`;
+        }
+        suggestionsEl.innerHTML = html;
+        suggestionsEl.style.display = (html) ? 'block' : 'none';
+    }
+
+    input.oninput = () => renderSuggestions(input.value.trim());
+    input.onfocus = () => renderSuggestions(input.value.trim());
+
+    suggestionsEl.onclick = (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (item) {
+            input.value = item.dataset.value;
+            suggestionsEl.style.display = 'none';
+        }
+    };
+}
+
 function promptIngredientCategory(ingredientName) {
     return new Promise((resolve) => {
         _categoryPickerResolve = resolve;
         const modal = document.getElementById('categoryPickerModal');
+        const input = document.getElementById('categoryPickerInput');
         document.getElementById('categoryPickerSubtitle').textContent = `Choose a category for "${ingredientName}":`;
+        input.value = '';
+        document.getElementById('categoryPickerSuggestions').style.display = 'none';
         modal.classList.add('show');
-
-        // Attach click handlers
-        modal.querySelectorAll('.category-pick-btn').forEach(btn => {
-            btn.onclick = () => {
-                modal.classList.remove('show');
-                if (_categoryPickerResolve) {
-                    _categoryPickerResolve(btn.dataset.cat);
-                    _categoryPickerResolve = null;
-                }
-            };
-        });
+        setupCategoryPickerAutocomplete();
+        setTimeout(() => input.focus(), 100);
     });
 }
+
+window.confirmCategoryPicker = function() {
+    const value = document.getElementById('categoryPickerInput').value.trim();
+    document.getElementById('categoryPickerModal').classList.remove('show');
+    if (_categoryPickerResolve) {
+        _categoryPickerResolve(value || null);
+        _categoryPickerResolve = null;
+    }
+};
 
 window.closeCategoryPicker = function() {
     document.getElementById('categoryPickerModal').classList.remove('show');
