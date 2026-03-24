@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class TablesAdapter(private val tables: List<String>) :
+class TablesAdapter(private val tables: List<Table>) :
     RecyclerView.Adapter<TablesAdapter.TableViewHolder>() {
 
     class TableViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -22,14 +22,14 @@ class TablesAdapter(private val tables: List<String>) :
 
     override fun onBindViewHolder(holder: TableViewHolder, position: Int) {
         val table = tables[position]
-        holder.tableName.text = table
+        holder.tableName.text = table.name
 
         holder.itemView.setOnClickListener {
-
             val intent = Intent(holder.itemView.context, MenuActivity::class.java)
-            intent.putExtra("TABLE_NAME", table)
+            // Pass both the Firestore document ID and the display name
+            intent.putExtra("TABLE_ID", table.id)
+            intent.putExtra("TABLE_NAME", table.name)
             holder.itemView.context.startActivity(intent)
-
         }
     }
 

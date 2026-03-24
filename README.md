@@ -13,7 +13,7 @@ An AI-powered inventory management system for the hospitality industry with real
 inventory-project/
 ├── frontend/          # Web Application (HTML, CSS, JavaScript)
 ├── backend/           # REST API (Node.js + Express)
-├── mobile/            # Mobile App (React Native) - In Development
+├── mobile-waiter-app/ # Mobile App (Native Android / Kotlin)
 └── docs/              # Documentation
 ```
 
@@ -73,9 +73,10 @@ npm run dev
 - Groq API (AI/LLM)
 - Jest (Testing)
 
-### Mobile (In Development)
-- React Native
-- Expo
+### Mobile (Waiter App)
+- Native Android (Kotlin)
+- Firebase Authentication + Firestore
+- Android JUnit (Testing)
 
 ---
 

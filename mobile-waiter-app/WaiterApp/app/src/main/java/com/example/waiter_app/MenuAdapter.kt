@@ -14,28 +14,21 @@ class MenuAdapter(
     private val TYPE_HEADER = 0
     private val TYPE_ITEM = 1
 
-    override fun getItemViewType(position: Int): Int {
-        return when (rows[position]) {
-            is MenuRow.Header -> TYPE_HEADER
-            is MenuRow.Item -> TYPE_ITEM
-        }
+    override fun getItemViewType(position: Int): Int = when (rows[position]) {
+        is MenuRow.Header -> TYPE_HEADER
+        is MenuRow.Item -> TYPE_ITEM
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-
         val inflater = LayoutInflater.from(parent.context)
-
         return if (viewType == TYPE_HEADER) {
-            val view = inflater.inflate(R.layout.item_menu_header, parent, false)
-            HeaderVH(view)
+            HeaderVH(inflater.inflate(R.layout.item_menu_header, parent, false))
         } else {
-            val view = inflater.inflate(R.layout.item_menu, parent, false)
-            ItemVH(view)
+            ItemVH(inflater.inflate(R.layout.item_menu, parent, false))
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-
         when (val row = rows[position]) {
 
             is MenuRow.Header -> {
@@ -45,8 +38,21 @@ class MenuAdapter(
             is MenuRow.Item -> {
                 val item = row.item
                 val vh = holder as ItemVH
-                vh.title.text = "${item.name}  €${"%.2f".format(item.price)}"
-                vh.itemView.setOnClickListener { onClick(item) }
+
+                if (item.isAvailable) {
+                    vh.title.text = "${item.name}  €${"%.2f".format(item.price)}"
+                    vh.itemView.alpha = 1.0f
+                    vh.itemView.isClickable = true
+                    vh.itemView.isFocusable = true
+                    vh.itemView.setOnClickListener { onClick(item) }
+                } else {
+                    // Dim and label unavailable items — no click registered
+                    vh.title.text = "${item.name}  €${"%.2f".format(item.price)} — Unavailable"
+                    vh.itemView.alpha = 0.4f
+                    vh.itemView.isClickable = false
+                    vh.itemView.isFocusable = false
+                    vh.itemView.setOnClickListener(null)
+                }
             }
         }
     }

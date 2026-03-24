@@ -1,22 +1,21 @@
 package com.example.waiter_app
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.auth.FirebaseAuth
-import android.content.Intent
-import android.widget.Button
+import com.google.firebase.firestore.FirebaseFirestore
 
 class TablesActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private val db = FirebaseFirestore.getInstance()
-    private val tablesList = mutableListOf<String>()
+    private val tablesList = mutableListOf<Table>()
     private lateinit var adapter: TablesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,11 +30,8 @@ class TablesActivity : AppCompatActivity() {
 
         loadTables()
 
-        val btnLogout = findViewById<Button>(R.id.btnLogout)
-
-        btnLogout.setOnClickListener {
+        findViewById<Button>(R.id.btnLogout).setOnClickListener {
             FirebaseAuth.getInstance().signOut()
-
             val intent = Intent(this, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -43,18 +39,17 @@ class TablesActivity : AppCompatActivity() {
     }
 
     private fun loadTables() {
+        // Only fetches `name` and `active` — no inventory or recipe data
         db.collection("tables")
-            .whereEqualTo("active", true) // only active tables
+            .whereEqualTo("active", true)
             .get()
-            .addOnSuccessListener { result: QuerySnapshot ->
+            .addOnSuccessListener { result ->
                 Log.d("TablesActivity", "Tables fetched: ${result.size()}")
 
                 tablesList.clear()
-
                 for (doc in result.documents) {
                     val name = doc.getString("name") ?: doc.id
-                    tablesList.add(name)
-                    Log.d("TablesActivity", "Table doc: ${doc.id} name=$name")
+                    tablesList.add(Table(id = doc.id, name = name))
                 }
 
                 adapter.notifyDataSetChanged()
@@ -65,7 +60,7 @@ class TablesActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 Log.e("TablesActivity", "Failed to fetch tables", e)
-                Toast.makeText(this, "Firestore error: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Failed to load tables: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 }

@@ -46,7 +46,7 @@ CREDENTIALS*.txt
 google-services.json
 CODE_EXPLANATION.md
 
-# Claude Code
+# Claude Code local config (not for submission)
 CLAUDE.md
 .claude/
 

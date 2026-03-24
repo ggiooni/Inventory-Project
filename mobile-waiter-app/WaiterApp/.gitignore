@@ -37,6 +37,9 @@ Thumbs.db
 *.apk
 *.aab
 
+# Firebase config (contains project identifiers, should not be committed)
+google-services.json
+
 # Firebase local debug
 firebase-debug.log
 firestore-debug.log

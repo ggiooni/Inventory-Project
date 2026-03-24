@@ -1,0 +1,250 @@
+================================================================================
+  SMART INVENTORY SYSTEM — DATABASE SEED & STOCK MODEL EXPLANATION
+  For: Nicolas Boggioni Troncoso (Full Stack Partner)
+  Date: March 2026
+================================================================================
+
+This document explains the updated Firestore data structure and the seed script
+used to populate the inventory and menuItems collections.
+
+--------------------------------------------------------------------------------
+1. HOW IT WORKED BEFORE
+--------------------------------------------------------------------------------
+
+The old import_inventory.js script read inventory_bar_optimized.csv and wrote
+each row directly to the Firestore "inventory" collection using the same field
+names from the CSV:
+
+  - id (Firestore document ID)
+  - name
+  - category
+  - stock          (total count of sealed bottles)
+  - bottleSizeMl   (ml per bottle)
+  - openMl         (ml currently open/remaining)
+  - minOpenMlWarning
+  - active
+
+Problems with the old approach:
+  - "stock" and "bottleSizeMl" are ambiguous names
+  - No "unitType" field — impossible to tell if an item was a bottle, can, or keg
+  - No "menuItems" collection was seeded at all
+  - Cans and bottles were treated the same as spirits (incorrect openMl logic)
+  - Keg sizes were wrong (CSV stored pint size 500ml instead of full keg 50000ml)
+  - "category" and "unitType" were mixed up in the data
+
+--------------------------------------------------------------------------------
+2. WHAT WAS WRONG
+--------------------------------------------------------------------------------
+
+A. category vs unitType were confused.
+   The old model had no unitType field. Category describes what the item IS
+   (Spirits, Beer, Wine, etc.). unitType describes the CONTAINER FORMAT
+   (bottle, can, keg). These are different concepts and must be stored separately.
+
+B. openMl was wrong for unit-based items (cans, bottled beers, soft drinks).
+   A can of Coca-Cola is NEVER partially open — you sell it whole. The CSV
+   had openMl = 500 for cans, which is meaningless and would cause the
+   finalization logic to treat them like spirits.
+
+C. Keg sizes were wrong.
+   A standard keg holds 50,000ml (50 litres). The CSV stored 500ml (one pint),
+   which is the serving size, not the container size.
+
+D. No menuItems collection existed.
+   The waiter app reads menuItems to build the menu. Without seeded menuItems,
+   the menu screen would be empty.
+
+E. The old FinalizeOrderService read field names "stock" and "bottleSizeMl"
+   which are now renamed to "stockItems" and "sizeMl" in the new model.
+
+--------------------------------------------------------------------------------
+3. HOW IT WORKS NOW
+--------------------------------------------------------------------------------
+
+A. Two collections are seeded: "inventory" and "menuItems"
+
+B. inventory documents now use these fields:
+     - id              (document ID, kept from CSV: e.g. spirit_jameson_whiskey)
+     - name            (display name)
+     - category        (what it IS: Spirits, Beer, Wine, Syrups, Soft Drinks)
+     - unitType        (container format: bottle, can, keg)
+     - sizeMl          (ml per container: bottle=750, keg=50000, can=330/500...)
+     - stockItems      (number of sealed, unopened containers in reserve)
+     - openMl          (ml remaining in the currently open container)
+     - minOpenMlWarning (ml threshold for low-stock alert; 0 = no alert)
+     - active          (boolean, from CSV)
+
+C. menuItems documents are auto-generated with:
+     - id              (deterministic: menu_001, menu_002, ...)
+     - name            (human-readable name)
+     - category        (Draught Beer, Bottled Beer, Soft Drink, Spirits, Wine, Cocktails)
+     - type            (pint, bottle, can, shot, glass, cocktail)
+     - price           (EUR)
+     - active          (true)
+     - isAvailable     (false if out of stock at seed time)
+     - recipe          (array — see section 5 below)
+
+D. The mobile app's FinalizeOrderService now reads "stockItems" and "sizeMl"
+   instead of "stock" and "bottleSizeMl", and writes them back after deduction.
+
+--------------------------------------------------------------------------------
+4. DIFFERENCE BETWEEN category AND unitType
+--------------------------------------------------------------------------------
+
+  category = WHAT the item is (its product type)
+  unitType  = HOW it is stored/sold (its container format)
+
+  Examples:
+    Jameson Irish Whiskey  → category: "Spirits",    unitType: "bottle"
+    Guinness Keg           → category: "Beers",      unitType: "keg"
+    Corona                 → category: "Beers",      unitType: "bottle"
+    Coca Cola Cans         → category: "Soft Drinks", unitType: "can"
+    Monin Syrup            → category: "Syrups",     unitType: "bottle"
+
+  The category is used to group items in the UI and determine sell rules
+  (e.g., all Spirits → shot menu items). The unitType is used to determine
+  whether the item is tracked in ml (pour-based) or as whole units.
+
+--------------------------------------------------------------------------------
+5. HOW INVENTORY IS SEEDED NOW
+--------------------------------------------------------------------------------
+
+Pour-based items (tracked in ml):
+  These are items where you measure by volume when serving:
+  → Spirits, Wines, Syrups, Kegs
+
+  Seeding rule (if csvStock >= 1):
+    stockItems = csvStock - 1    (one container is already open, not in reserve)
+    openMl     = sizeMl          (the open container starts full)
+
+  Seeding rule (if csvStock == 0):
+    stockItems = 0
+    openMl     = 0
+
+  Example: Jameson Whiskey with csvStock=2, sizeMl=750
+    → stockItems = 1 (one sealed bottle in the back)
+    → openMl = 750  (one bottle is currently open behind the bar)
+
+  Keg special case:
+    sizeMl is overridden to 50000 (50L standard keg), regardless of CSV value.
+    minOpenMlWarning is set to 5000 (10% of keg = roughly 10 pints remaining).
+
+Unit-based items (tracked as whole containers):
+  These are items sold as sealed units — you never "open" them partially:
+  → Canned beers, Bottled beers, Soft drinks (bottles and cans)
+
+  Seeding rule:
+    stockItems = csvStock    (total units available)
+    openMl     = 0           (no partial tracking)
+    minOpenMlWarning = 0     (no ml-based threshold; stock count used instead)
+
+--------------------------------------------------------------------------------
+6. HOW menuItems ARE GENERATED
+--------------------------------------------------------------------------------
+
+menuItems are derived from inventory using these sell rules:
+
+  unitType === "keg"     → Pint menu item (qtyMl: 500)   price: €6.50
+  category === "Beers"   → Whole bottle/can               price: €5.00
+  category === "Spirits" → Shot menu item (qtyMl: 50)    price: €8 / €10 (premium)
+  category === "Wines"   → Glass menu item (qtyMl: 200)  price: €8.00
+  category === "Soft Drinks" → Whole unit                 price: €3.00
+
+  Cocktails are manually defined and use ingredients from inventory.
+  Current cocktail list:
+    - Aperol Spritz   (Aperol 90ml + Prosecco 90ml + Soda Water whole)
+    - Negroni         (Gordons Gin 30ml + Campari 30ml + Amaretto 30ml)
+    - Whiskey Sour    (Jameson 50ml + Agave Syrup 20ml)
+    - Espresso Martini (Vanilla Vodka 40ml + Kahlua 20ml + Cacao White 15ml)
+    - Moscow Mule     (Smirnoff 50ml + Ginger Beer whole)
+    - Tequila Sunrise (Jose Cuervo 50ml + Fanta Orange whole + Hibiscus Syrup 15ml)
+    - Bramble         (Gordons Gin 50ml + Elderflower 15ml + Raspberry Rum 15ml + Sour Cherry 10ml)
+    - Dark & Stormy   (Gosling Black Rum 50ml + Ginger Beer whole)
+    - Cuba Libre      (Bacardi White Rum 50ml + Coca Cola Can whole)
+
+--------------------------------------------------------------------------------
+7. HOW RECIPE DEDUCTION WORKS NOW
+--------------------------------------------------------------------------------
+
+When a waiter finalises an order, FinalizeOrderService runs a Firestore
+transaction that deducts stock for every ingredient in every ordered item.
+
+There are two types of ingredients in a recipe:
+
+  A. Pour-based ingredient:
+       { inventoryId: "spirit_jameson_whiskey", qtyMl: 50 }
+     → Deducts ml from openMl. Opens new containers from stockItems as needed.
+
+  B. Whole-unit ingredient:
+       { inventoryId: "soft_coca_cola_cans", consumeWhole: true }
+     → Decrements stockItems by 1. Does not touch openMl.
+
+Pour-based deduction algorithm (per ingredient, across all ordered items):
+
+  totalNeeded = orderedQty × qtyMl
+
+  if totalNeeded > openMl:
+    while totalNeeded > openMl AND stockItems > 0:
+      openMl    += sizeMl       // open a new container
+      stockItems -= 1           // take it from reserve
+
+  if totalNeeded > openMl:
+    → INSUFFICIENT STOCK warning is logged
+    → openMl is set to 0 (order still finalises)
+  else:
+    openMl -= totalNeeded       // subtract all at once
+
+After deduction, if openMl <= minOpenMlWarning (and threshold > 0):
+  → LOW STOCK warning is shown to the waiter on screen.
+
+--------------------------------------------------------------------------------
+8. HOW WHOLE-UNIT vs POUR-BASED ITEMS DIFFER
+--------------------------------------------------------------------------------
+
+  POUR-BASED:
+  - Examples: Gin, Whiskey, Wine, Syrup, Keg
+  - sizeMl matters (ml per container)
+  - openMl tracks partial container
+  - Multiple servings come from one container
+  - Finalization deducts ml, opens new containers as needed
+  - minOpenMlWarning triggers alert when running low
+
+  WHOLE-UNIT:
+  - Examples: Canned beer, Bottled beer, Soft drink
+  - sizeMl is stored but irrelevant for deduction
+  - openMl is always 0 (never partially open)
+  - Each serving = 1 whole container
+  - Finalization decrements stockItems by 1 per item ordered
+  - No ml-based warning (minOpenMlWarning = 0)
+
+--------------------------------------------------------------------------------
+9. RESET / SEED RULES — READ BEFORE RESEEDING
+--------------------------------------------------------------------------------
+
+If you ever need to reset or reseed the database, follow these rules:
+
+  1. Pour-based items (spirits, wines, syrups, kegs):
+     Set stockItems = (total bottles) - 1
+     Set openMl = sizeMl
+     (This represents one container already open behind the bar.)
+
+  2. Unit-based items (cans, bottled beers, soft drinks):
+     Set stockItems = total count
+     Set openMl = 0
+
+  3. Always use the field names from the new model:
+     stockItems (NOT "stock"), sizeMl (NOT "bottleSizeMl")
+
+  4. Keg sizeMl must be 50000 (50L), NOT 500 (pint).
+
+  5. category and unitType must both be set and must NOT be the same value.
+
+  6. Do not add new inventory without also adding a corresponding menuItem
+     with a recipe that references the inventory ID.
+
+  7. Run: node firestore-import/import_inventory.js
+     This will delete and repopulate both collections atomically.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

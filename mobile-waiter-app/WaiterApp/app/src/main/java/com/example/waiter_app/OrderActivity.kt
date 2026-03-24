@@ -1,92 +1,105 @@
 package com.example.waiter_app
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.firestore.FirebaseFirestore
 import com.example.waiter_app.services.FinalizeOrderService
+import com.example.waiter_app.services.InsufficientStockWarning
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 
 class OrderActivity : AppCompatActivity() {
 
     private val db = FirebaseFirestore.getInstance()
     private val lines = mutableListOf<OrderLine>()
     private lateinit var adapter: OrderAdapter
+    private lateinit var btnFinalizeOrder: Button
+    private lateinit var totalText: TextView
 
+    private var tableId: String? = null
     private var tableName: String? = null
     private var currentOrderId: String? = null
-    private lateinit var totalText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_order)
 
-        val btnFinalizeOrder = findViewById<Button>(R.id.btnFinalizeOrder)
-
+        tableId = intent.getStringExtra("TABLE_ID")
         tableName = intent.getStringExtra("TABLE_NAME")
 
-        findViewById<TextView>(R.id.orderTitle).text = "Order - $tableName"
+        btnFinalizeOrder = findViewById(R.id.btnFinalizeOrder)
         totalText = findViewById(R.id.orderTotal)
+
+        findViewById<TextView>(R.id.orderTitle).text = "Order - $tableName"
 
         val recycler = findViewById<RecyclerView>(R.id.orderRecycler)
         recycler.layoutManager = LinearLayoutManager(this)
-
         adapter = OrderAdapter(lines)
         recycler.adapter = adapter
 
         loadOrder()
 
         btnFinalizeOrder.setOnClickListener {
-            val orderId = currentOrderId
-
-            if (orderId == null) {
-                android.widget.Toast.makeText(this, "No open order found yet.", android.widget.Toast.LENGTH_SHORT).show()
+            val orderId = currentOrderId ?: run {
+                Toast.makeText(this, "No open order found.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            FinalizeOrderService().finalizeOrder(
-                orderId = orderId,
-                onSuccess = { warnings ->
-
-                    // Refresh the screen so it no longer shows as open
-                    loadOrder()
-
-                    if (warnings.isNotEmpty()) {
-                        val msg = warnings.joinToString("\n") {
-                            "⚠ ${it.name}: low (${it.openMl}ml left)"
-                        }
-
-                        androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Stock warning")
-                            .setMessage(msg)
-                            .setPositiveButton("OK", null)
-                            .show()
-                    } else {
-                        android.widget.Toast.makeText(this, "Order finalized!", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onError = { e ->
-                    android.util.Log.e("FINALIZE_DEBUG", "Finalize failed", e)
-                    android.widget.Toast.makeText(
-                        this,
-                        "Finalize failed: ${e.message}",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
-            )
+            finalizeOrder(orderId)
         }
     }
 
+    private fun finalizeOrder(orderId: String) {
+        setFinalizing(true)
+
+        FinalizeOrderService().finalizeOrder(
+            orderId = orderId,
+            onSuccess = { lowStock, insufficient ->
+                setFinalizing(false)
+                loadOrder()
+
+                val lines = mutableListOf<String>()
+                insufficient.forEach { lines.add("OUT OF STOCK: ${it.name} (needed ${it.requestedMl}ml, had ${it.availableMl}ml)") }
+                lowStock.forEach { lines.add("Low stock: ${it.name}: ${it.openMl}ml left") }
+
+                if (lines.isNotEmpty()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Stock Alerts")
+                        .setMessage(lines.joinToString("\n"))
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    Toast.makeText(this, "Order finalized!", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onError = { e ->
+                setFinalizing(false)
+                Log.e("OrderActivity", "Finalize failed", e)
+                Toast.makeText(this, errorMessage(e), Toast.LENGTH_LONG).show()
+            }
+        )
+    }
+
+    /** Disables the button and updates its label while a finalization is in progress. */
+    private fun setFinalizing(active: Boolean) {
+        btnFinalizeOrder.isEnabled = !active
+        btnFinalizeOrder.text = if (active) "Finalizing…" else "Finalize Order"
+    }
+
     private fun loadOrder() {
+        val id = tableId ?: return
+
         db.collection("orders")
-            .whereEqualTo("table", tableName)
+            .whereEqualTo("table", id)
             .whereEqualTo("status", "open")
             .limit(1)
             .get()
             .addOnSuccessListener { result ->
-                android.util.Log.d("ORDER_DEBUG", "Items found: ${result.documents.size}")
                 if (result.isEmpty) {
                     lines.clear()
                     adapter.notifyDataSetChanged()
@@ -98,20 +111,17 @@ class OrderActivity : AppCompatActivity() {
                 val orderId = result.documents[0].id
                 currentOrderId = orderId
 
-                db.collection("orders")
-                    .document(orderId)
+                db.collection("orders").document(orderId)
                     .collection("items")
                     .get()
                     .addOnSuccessListener { items ->
                         lines.clear()
-
                         var total = 0.0
 
                         for (doc in items.documents) {
                             val name = doc.getString("name") ?: "Item"
                             val qty = doc.getLong("qty") ?: 1L
                             val unitPrice = doc.getDouble("unitPrice") ?: 0.0
-
                             val line = OrderLine(name, qty, unitPrice)
                             lines.add(line)
                             total += line.lineTotal
@@ -120,15 +130,29 @@ class OrderActivity : AppCompatActivity() {
                         adapter.notifyDataSetChanged()
                         totalText.text = "Total: €${"%.2f".format(total)}"
                     }
+                    .addOnFailureListener { e ->
+                        Log.e("OrderActivity", "Failed to load order items", e)
+                        Toast.makeText(this, "Failed to load items: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
             }
             .addOnFailureListener { e ->
-                android.util.Log.e("ORDER_DEBUG", "Failed loading order items", e)
-                android.widget.Toast.makeText(
-                    this,
-                    "Order load failed: ${e.message}",
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
+                Log.e("OrderActivity", "Failed to load order", e)
+                Toast.makeText(this, "Failed to load order: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 
+    private fun errorMessage(e: Exception): String = when {
+        e is FirebaseFirestoreException &&
+                e.code == FirebaseFirestoreException.Code.ABORTED ->
+            "Transaction conflict. Please try again."
+
+        e is FirebaseFirestoreException &&
+                e.code == FirebaseFirestoreException.Code.UNAVAILABLE ->
+            "Network error. Check your connection."
+
+        e.message?.contains("Order not found", ignoreCase = true) == true ->
+            "Order not found. It may have already been closed."
+
+        else -> "Finalize failed: ${e.message}"
+    }
 }
