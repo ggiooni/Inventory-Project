@@ -96,6 +96,12 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    match /counters/{counterId} {
+    allow read: if isAuthenticated();
+    allow update: if isAuthenticated();
+    allow create, delete: if isManagerOrAdmin();
+  }
+
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;
