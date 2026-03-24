@@ -75,13 +75,11 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read, create, update: if isAuthenticated();
-      allow delete: if isManagerOrAdmin();
+      allow read, create, update, delete: if isAuthenticated();
 
     // Order items subcollection
     match /items/{itemId} {
-      allow read, create, update: if isAuthenticated();
-      allow delete: if isManagerOrAdmin();
+      allow read, create, update, delete: if isAuthenticated();
     }
     }
 
