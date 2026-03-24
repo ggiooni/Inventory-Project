@@ -129,38 +129,50 @@ class MenuActivity : AppCompatActivity() {
         val id = tableId ?: return
         isCreatingOrder = true
 
-        val order = hashMapOf(
-            "table" to id,           // store document ID, not display name
-            "status" to "open",
-            "createdAt" to FieldValue.serverTimestamp()
-        )
+        val counterRef = db.collection("counters").document("orders")
 
-        db.collection("orders")
-            .add(order)
-            .addOnSuccessListener { orderRef ->
-                orderId = orderRef.id
-                isCreatingOrder = false
-                addOrIncrementItem(orderRef.id, menuItem)
-            }
-            .addOnFailureListener { e ->
-                isCreatingOrder = false
-                Toast.makeText(this, "Order create failed: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        db.runTransaction { tx ->
+            val snap = tx.get(counterRef)
+            val next = (snap.getLong("count") ?: 0L) + 1L
+            tx.set(counterRef, mapOf("count" to next))
+            next
+        }.addOnSuccessListener { next ->
+            val newOrderId = "order_${next.toString().padStart(3, '0')}"
+            val order = hashMapOf(
+                "table" to id,
+                "status" to "open",
+                "createdAt" to FieldValue.serverTimestamp()
+            )
+            db.collection("orders").document(newOrderId).set(order)
+                .addOnSuccessListener {
+                    orderId = newOrderId
+                    isCreatingOrder = false
+                    addOrIncrementItem(newOrderId, menuItem)
+                }
+                .addOnFailureListener { e ->
+                    isCreatingOrder = false
+                    Toast.makeText(this, "Order create failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+        }.addOnFailureListener { e ->
+            isCreatingOrder = false
+            Toast.makeText(this, "Order create failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun addOrIncrementItem(orderId: String, menuItem: MenuItem) {
         val itemsRef = db.collection("orders").document(orderId).collection("items")
 
-        itemsRef
-            .whereEqualTo("menuItemId", menuItem.id)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { result ->
-                if (!result.isEmpty) {
-                    val docId = result.documents[0].id
-                    itemsRef.document(docId).update("qty", FieldValue.increment(1))
+        // Fetch all items once: check for existing entry and get count for sequential ID
+        itemsRef.get()
+            .addOnSuccessListener { allItems ->
+                val existing = allItems.documents.firstOrNull {
+                    it.getString("menuItemId") == menuItem.id
+                }
+                if (existing != null) {
+                    itemsRef.document(existing.id).update("qty", FieldValue.increment(1))
                     Toast.makeText(this, "${menuItem.name} +1", Toast.LENGTH_SHORT).show()
                 } else {
+                    val newItemId = "item_${(allItems.size() + 1).toString().padStart(3, '0')}"
                     val item = hashMapOf(
                         "menuItemId" to menuItem.id,
                         "name" to menuItem.name,
@@ -168,7 +180,7 @@ class MenuActivity : AppCompatActivity() {
                         "qty" to 1,
                         "status" to "pending"
                     )
-                    itemsRef.add(item)
+                    itemsRef.document(newItemId).set(item)
                     Toast.makeText(this, "${menuItem.name} added", Toast.LENGTH_SHORT).show()
                 }
             }

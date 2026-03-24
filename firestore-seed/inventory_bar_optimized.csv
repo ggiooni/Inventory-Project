@@ -1,0 +1,86 @@
+id,name,category,stock,bottleSizeMl,openMl,minOpenMlWarning,active
+beer_asahi_bottles,Asahi Bottles,Beers,53,500,500,0,TRUE
+beer_citra_ipa_keg,Citra IPA Keg,Beers,2,500,500,0,TRUE
+beer_corona,Corona,Beers,0,500,500,0,TRUE
+beer_guinness_keg,Guinness Keg,Beers,2,500,500,0,TRUE
+beer_heineken_00,Heineken 00,Beers,27,500,500,0,TRUE
+beer_rockshore_lager_keg,Rockshore Lager Keg,Beers,2,500,500,0,TRUE
+soft_cherry_soda,Cherry Soda,Soft Drinks,23,750,750,0,TRUE
+soft_coca_cola,Coca Cola,Soft Drinks,13,750,750,0,TRUE
+soft_coca_cola_cans,Coca Cola Cans,Soft Drinks,72,750,750,0,TRUE
+soft_coca_cola_zero,Coca Cola Zero,Soft Drinks,0,750,750,0,TRUE
+soft_coca_cola_zero_cans,Coca Cola Zero Cans,Soft Drinks,14,750,750,0,TRUE
+soft_diet_coca_cola_cans,Diet Coca Cola Cans,Soft Drinks,48,750,750,0,TRUE
+soft_fanta_lemon_cans,Fanta Lemon Cans,Soft Drinks,54,750,750,0,TRUE
+soft_fanta_orange,Fanta Orange,Soft Drinks,44,750,750,0,TRUE
+soft_hollows_ginger_beer,Hollows Ginger Beer,Soft Drinks,12,500,500,0,TRUE
+spirit_mozart_chocolate,Mozart Chocolate,Spirits,15,750,750,0,TRUE
+spirit_mozart_white_chocolate,Mozart White Chocolate,Spirits,2,750,750,0,TRUE
+soft_soda_water,Soda Water,Soft Drinks,15,750,750,0,TRUE
+soft_sprite_zero,Sprite Zero,Soft Drinks,66,750,750,0,TRUE
+soft_tk_lemonade,Tk Lemonade,Soft Drinks,12,750,750,0,TRUE
+spirit_1800_coconut_tequila,1800 Coconut Tequila,Spirits,2,750,750,120,TRUE
+spirit_amaretto_liqueur,Amaretto Liqueur,Spirits,3,750,750,120,TRUE
+spirit_aperol,Aperol,Spirits,4,750,750,120,TRUE
+spirit_bacardi_white_rum,Bacardi White Rum,Spirits,2,750,750,120,TRUE
+spirit_baileys,Baileys,Spirits,3,750,750,120,TRUE
+spirit_banana_liqueur,Banana Liqueur,Spirits,3,750,750,120,TRUE
+spirit_bourbon,Bourbon,Spirits,2,750,750,120,TRUE
+spirit_cacao_white_liqueur,Cacao White Liqueur,Spirits,2,750,750,120,TRUE
+spirit_campari,Campari,Spirits,4,750,750,120,TRUE
+spirit_captain_spiced_gold_rum,Captain Spiced Gold Rum,Spirits,3,750,750,120,TRUE
+spirit_casa_amigos_tequila,Casa Amigos Tequila,Spirits,1,750,750,120,TRUE
+spirit_ciroc_vodka,Ciroc Vodka,Spirits,2,750,750,120,TRUE
+spirit_creme_de_menthe_liqueurs,Creme de Menthe Liqueurs,Spirits,4,750,750,120,TRUE
+spirit_dingle_gin,Dingle Gin,Spirits,2,750,750,120,TRUE
+spirit_elderflower_liqueur,Elderflower Liqueur,Spirits,5,750,750,120,TRUE
+spirit_frangelico_liqueur,Frangelico Liqueur,Spirits,3,750,750,120,TRUE
+spirit_gordons_gin,Gordons Gin,Spirits,3,750,750,120,TRUE
+spirit_gosling_black_rum,Gosling Black Rum,Spirits,4,750,750,120,TRUE
+spirit_grey_goose_vodka,Grey Goose Vodka,Spirits,2,750,750,120,TRUE
+spirit_hendricks_gin,Hendricks Gin,Spirits,2,750,750,120,TRUE
+spirit_jameson_whiskey,Jameson Whiskey,Spirits,2,750,750,120,TRUE
+spirit_jose_cuervo_tequila,Jose Cuervo Tequila,Spirits,5,750,750,120,TRUE
+spirit_kahlua_coffee_liqueur,Kahlua Coffee Liqueur,Spirits,3,750,750,120,TRUE
+spirit_ketel_one_vodka,Ketel One Vodka,Spirits,4,750,750,120,TRUE
+spirit_limoncello_liqueur,Limoncello Liqueur,Spirits,3,750,750,120,TRUE
+spirit_maraschino_liqueur,Maraschino Liqueur,Spirits,1,750,750,120,TRUE
+spirit_monkey_47_gin,Monkey 47 Gin,Spirits,2,750,750,120,TRUE
+spirit_overproof_rum,Overproof Rum,Spirits,3,750,750,120,TRUE
+spirit_parfait_amour_liqueur,Parfait Amour Liqueur,Spirits,1,750,750,120,TRUE
+spirit_pink_gin,Pink Gin,Spirits,5,750,750,120,TRUE
+spirit_raspberry_rum,Raspberry Rum,Spirits,1,750,750,120,TRUE
+spirit_raspberry_vodka,Raspberry Vodka,Spirits,1,750,750,120,TRUE
+spirit_redbreast_whiskey,Redbreast Whiskey,Spirits,1,750,750,120,TRUE
+spirit_roe_co_whiskey,Roe & Co Whiskey,Spirits,5,750,750,120,TRUE
+spirit_roku_gin,Roku Gin,Spirits,2,750,750,120,TRUE
+spirit_smirnoff_vodka,Smirnoff Vodka,Spirits,5,750,750,120,TRUE
+spirit_spicy_tamarindo_vodka,Spicy Tamarindo Vodka,Spirits,9,750,750,120,TRUE
+spirit_tanquerai_gin,Tanquerai Gin,Spirits,2,750,750,120,TRUE
+spirit_tequila_rose,Tequila Rose,Spirits,2,750,750,120,TRUE
+spirit_triple_sec,Triple Sec,Spirits,2,750,750,120,TRUE
+spirit_vanilla_vodka,Vanilla Vodka,Spirits,3,750,750,120,TRUE
+spirit_violet_liqueur,Violet Liqueur,Spirits,1,750,750,120,TRUE
+syrup_agave_syrup,Agave Syrup,Syrups,3,750,750,80,TRUE
+syrup_almond_syrup,Almond Syrup,Syrups,3,750,750,80,TRUE
+syrup_amaretto_syrup,Amaretto Syrup,Syrups,10,750,750,80,TRUE
+syrup_basil_syrup,Basil Syrup,Syrups,4,750,750,80,TRUE
+syrup_bitter_syrup,Bitter Syrup,Syrups,5,750,750,80,TRUE
+syrup_caramel_syrup,Caramel Syrup,Syrups,1,750,750,80,TRUE
+syrup_cinnamon_syrup,Cinnamon Syrup,Syrups,3,750,750,80,TRUE
+syrup_coconut_syrup,Coconut Syrup,Syrups,3,750,750,80,TRUE
+syrup_cucumber_syrup,Cucumber Syrup,Syrups,2,750,750,80,TRUE
+syrup_falernum_syrup,Falernum Syrup,Syrups,5,750,750,80,TRUE
+syrup_gingerbread_syrup,Gingerbread Syrup,Syrups,3,750,750,80,TRUE
+syrup_hibiscus_syrup,Hibiscus Syrup,Syrups,5,750,750,80,TRUE
+syrup_mango_syrup,Mango Syrup,Syrups,2,750,750,80,TRUE
+syrup_monin_syrup,Monin Syrup,Syrups,5,750,750,80,TRUE
+syrup_pistachio_syrup,Pistachio Syrup,Syrups,1,750,750,80,TRUE
+syrup_sour_cherry_syrup,Sour Cherry Syrup,Syrups,3,750,750,80,TRUE
+syrup_spiced_mango_syrup,Spiced Mango Syrup,Syrups,3,750,750,80,TRUE
+syrup_vanilla_syrup,Vanilla Syrup,Syrups,1,750,750,80,TRUE
+wine_casa_silva_cabernet_sauvignon,Casa Silva Cabernet Sauvignon,Wines,13,750,750,150,TRUE
+wine_chardonnay,Chardonnay,Wines,6,750,750,150,TRUE
+wine_pinot_grigio_corte_vigna,Pinot Grigio Corte Vigna,Wines,7,750,750,150,TRUE
+wine_rialto_prosecco,Rialto Prosecco,Wines,3,750,750,150,TRUE
+wine_villa_mura_pinot,Villa Mura Pinot,Wines,3,750,750,150,TRUE

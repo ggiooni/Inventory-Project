@@ -1,0 +1,13 @@
+{
+  "name": "firestore-seed",
+  "version": "1.0.0",
+  "description": "Seed/reset script for the Smart Inventory Firestore database",
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "firebase-admin": "^13.7.0"
+  }
+}
