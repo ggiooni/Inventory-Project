@@ -57,6 +57,16 @@ npm run dev
 # API running at http://localhost:5000
 ```
 
+### Mobile Waiter App (Android)
+
+```bash
+cd mobile-waiter-app/WaiterApp
+./gradlew assembleDebug
+# APK: app/build/outputs/apk/debug/app-debug.apk
+```
+
+See [mobile-waiter-app/README.md](./mobile-waiter-app/README.md) for full setup and feature details.
+
 ---
 
 ## Technology Stack
@@ -74,8 +84,9 @@ npm run dev
 - Jest (Testing)
 
 ### Mobile (Waiter App)
-- Native Android (Kotlin)
-- Firebase Authentication + Firestore
+- Native Android (Kotlin) — Material 3 dark theme
+- Firebase Authentication + Firestore (direct SDK, no backend)
+- RecyclerView with multi-view-type adapter
 - Android JUnit (Testing)
 
 ---
@@ -89,6 +100,7 @@ npm run dev
 - **Role-based Access** - Admin, Manager, Staff permissions
 - **Dark Mode** - User preference saved locally
 - **Mobile Responsive** - Works on all devices
+- **Waiter Mobile App** - Native Android POS with Material 3 dark theme; collapsible menu categories, optimistic qty controls, automatic inventory deduction on finalize
 
 ---
 
@@ -174,6 +186,9 @@ cd frontend && npm test
 
 # With coverage
 npm run test:coverage
+
+# Mobile (JVM unit tests, no emulator needed)
+cd mobile-waiter-app/WaiterApp && ./gradlew test
 ```
 
 ---

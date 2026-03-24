@@ -1,5 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Background layers -->
+    <color name="bg_900">#0A0A0A</color>
+    <color name="surface_800">#1A1A1A</color>
+    <color name="surface_700">#242424</color>
+    <color name="surface_600">#2E2E2E</color>
+
+    <!-- Primary: amber/gold for action buttons -->
+    <color name="amber_300">#FCD34D</color>
+    <color name="amber_500">#F59E0B</color>
+    <color name="amber_container">#2D1F00</color>
+
+    <!-- Secondary: green for active table status -->
+    <color name="green_400">#4ADE80</color>
+    <color name="green_500">#22C55E</color>
+    <color name="green_container">#052E16</color>
+
+    <!-- Error/warning -->
+    <color name="red_400">#F87171</color>
+
+    <!-- Text -->
+    <color name="text_primary">#E8E8E8</color>
+    <color name="text_secondary">#A0A0A0</color>
+    <color name="text_disabled">#555555</color>
+    <color name="outline">#3A3A3A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Material 3 role mappings -->
+    <color name="colorPrimary">@color/amber_500</color>
+    <color name="colorOnPrimary">@color/black</color>
+    <color name="colorPrimaryContainer">@color/amber_container</color>
+    <color name="colorOnPrimaryContainer">@color/amber_300</color>
+    <color name="colorSecondary">@color/green_500</color>
+    <color name="colorOnSecondary">@color/black</color>
+    <color name="colorSecondaryContainer">@color/green_container</color>
+    <color name="colorOnSecondaryContainer">@color/green_400</color>
+    <color name="colorBackground">@color/bg_900</color>
+    <color name="colorOnBackground">@color/text_primary</color>
+    <color name="colorSurface">@color/surface_800</color>
+    <color name="colorOnSurface">@color/text_primary</color>
+    <color name="colorSurfaceVariant">@color/surface_700</color>
+    <color name="colorOnSurfaceVariant">@color/text_secondary</color>
+    <color name="colorOutline">@color/outline</color>
+    <color name="colorError">@color/red_400</color>
+    <color name="colorOnError">@color/black</color>
 </resources>

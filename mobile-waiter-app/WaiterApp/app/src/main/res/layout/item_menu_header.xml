@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/headerTitle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="14dp"
-    android:textStyle="bold"
-    android:textSize="18sp" />
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="8dp"
+    android:background="@color/colorBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/headerTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textStyle="bold"
+        android:textSize="12sp"
+        android:letterSpacing="0.1"
+        android:textColor="@color/colorPrimary" />
+
+    <!-- Rotated 180° when section is expanded -->
+    <ImageView
+        android:id="@+id/headerChevron"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_chevron_down"
+        android:tint="@color/colorPrimary"
+        android:contentDescription="Expand/collapse" />
+
+</LinearLayout>

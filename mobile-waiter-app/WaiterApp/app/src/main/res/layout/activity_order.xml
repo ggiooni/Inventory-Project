@@ -1,39 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="16dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/colorBackground">
 
-    <TextView
-        android:id="@+id/orderTitle"
-        android:text="Order"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <!-- Top app bar with back button and table name -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/surface_800"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:navigationIconTint="@color/white"
+        app:titleTextColor="@color/white" />
 
+    <!-- Order items list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/orderRecycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="12dp"/>
+        android:layout_weight="1" />
 
+    <!-- Empty order state -->
     <TextView
-        android:id="@+id/orderTotal"
+        android:id="@+id/emptyOrderText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:paddingTop="12dp"
-        android:text="Total: €0.00"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="No items in order"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:visibility="gone" />
 
-    <Button
-        android:id="@+id/btnFinalizeOrder"
+    <!-- Bottom bar: total + action buttons -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Finalize Order"
-        android:layout_marginTop="16dp"/>
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/surface_700">
+
+        <TextView
+            android:id="@+id/orderTotal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:textColor="@color/white"
+            android:paddingBottom="12dp"
+            android:text="Total: €0.00" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClearOrder"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="Clear Order"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFinalizeOrder"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="2"
+                android:text="Finalize Order"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+    </LinearLayout>
+
 </LinearLayout>
