@@ -83,10 +83,9 @@ service cloud.firestore {
     }
     }
 
-    // Order sequence counter — authenticated users read/update, managers create
+    // Order sequence counter
     match /counters/{counterId} {
-      allow read, update: if isAuthenticated();
-      allow create: if isManagerOrAdmin();
+      allow read, update, create: if isAuthenticated();
     }
 
     // User settings (future use)
