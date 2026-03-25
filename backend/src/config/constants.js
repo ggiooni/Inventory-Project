@@ -38,6 +38,25 @@ const STOCK_STATUS = {
 // POS Systems supported
 const POS_SYSTEMS = ['toast', 'square', 'clover', 'lightspeed'];
 
+// Order statuses (used by WaiterApp POS integration)
+const ORDER_STATUS = {
+    OPEN: 'open',
+    CLOSED: 'closed'
+};
+
+// Order item statuses
+const ORDER_ITEM_STATUS = {
+    PENDING: 'pending',
+    SERVED: 'served',
+    CANCELLED: 'cancelled'
+};
+
+// Bottle defaults for inventory consumption
+const BOTTLE_DEFAULTS = {
+    BOTTLE_SIZE_ML: 750,
+    MIN_OPEN_ML_WARNING: 120
+};
+
 // JWT Configuration
 const JWT_CONFIG = {
     EXPIRES_IN: '24h',
@@ -69,6 +88,9 @@ module.exports = {
     PRIORITY_LEVELS,
     STOCK_STATUS,
     POS_SYSTEMS,
+    ORDER_STATUS,
+    ORDER_ITEM_STATUS,
+    BOTTLE_DEFAULTS,
     JWT_CONFIG,
     MESSAGES
 };
