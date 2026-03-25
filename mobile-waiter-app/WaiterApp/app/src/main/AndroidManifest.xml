@@ -2,7 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Required for REST API calls to backend -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Allow cleartext HTTP for local development (http://10.0.2.2:5000) -->
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

@@ -41,10 +41,8 @@ class MenuAdapter(
                 val vh = holder as HeaderVH
                 vh.title.text = row.title.uppercase()
                 val expanded = isExpanded(row.title)
-                // Rotate chevron: 0° = collapsed (pointing down), 180° = expanded (pointing up)
                 vh.chevron.rotation = if (expanded) 180f else 0f
                 vh.itemView.setOnClickListener {
-                    // Animate chevron on tap
                     val targetRotation = if (expanded) 0f else 180f
                     vh.chevron.animate().rotation(targetRotation).setDuration(200).start()
                     onHeaderClick(row.title)

@@ -14,12 +14,9 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.waiter_app.services.ApiClient
 
 class MenuActivity : AppCompatActivity() {
-
-    private val db = FirebaseFirestore.getInstance()
 
     // allMenuRows holds every row (all categories + all items, always)
     private val allMenuRows = mutableListOf<MenuRow>()
@@ -103,7 +100,6 @@ class MenuActivity : AppCompatActivity() {
         buildDisplayRows()
     }
 
-    /** Rebuilds displayRows from allMenuRows based on which categories are expanded. */
     private fun buildDisplayRows() {
         var currentCategory: String? = null
         displayRows.clear()
@@ -128,89 +124,97 @@ class MenuActivity : AppCompatActivity() {
     private fun loadOpenOrder() {
         val id = tableId ?: return
 
-        db.collection("orders")
-            .whereEqualTo("table", id)
-            .whereEqualTo("status", "open")
-            .limit(1)
-            .get()
-            .addOnSuccessListener { result ->
-                if (!result.isEmpty) {
-                    orderId = result.documents[0].id
+        ApiClient.getOpenOrder(
+            tableId = id,
+            onSuccess = { oid, _ ->
+                if (oid != null) {
+                    orderId = oid
                     loadCurrentOrderItems()
                 } else {
                     orderId = null
                     localQtys.clear()
-                    adapter.notifyDataSetChanged()
-                    updateOrderBar()
+                    runOnUiThread {
+                        adapter.notifyDataSetChanged()
+                        updateOrderBar()
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
+            },
+            onError = { e ->
                 Log.e("MenuActivity", "Failed to load open order", e)
             }
+        )
     }
 
     private fun loadCurrentOrderItems() {
         val oid = orderId ?: return
-        db.collection("orders").document(oid).collection("items").get()
-            .addOnSuccessListener { items ->
-                localQtys.clear()
-                for (doc in items.documents) {
-                    val menuItemId = doc.getString("menuItemId") ?: continue
-                    val qty = (doc.getLong("qty") ?: 1L).toInt()
-                    localQtys[menuItemId] = qty
+        ApiClient.getOrderDetails(
+            orderId = oid,
+            onSuccess = { order ->
+                runOnUiThread {
+                    localQtys.clear()
+                    val items = order["items"] as? List<Map<String, Any>> ?: emptyList()
+                    for (item in items) {
+                        val menuItemId = item["menuItemId"] as? String ?: continue
+                        val qty = (item["qty"] as? Number)?.toInt() ?: 1
+                        localQtys[menuItemId] = qty
+                    }
+                    adapter.notifyDataSetChanged()
+                    updateOrderBar()
                 }
-                adapter.notifyDataSetChanged()
-                updateOrderBar()
-            }
-            .addOnFailureListener { e ->
+            },
+            onError = { e ->
                 Log.e("MenuActivity", "Failed to load order items", e)
             }
+        )
     }
 
     // ── Menu loading ──────────────────────────────────────────────────────────
 
     private fun loadMenu() {
-        db.collection("menuItems")
-            .get()
-            .addOnSuccessListener { result ->
-                val items = mutableListOf<MenuItem>()
+        ApiClient.getMenuItems(
+            onSuccess = { items ->
+                runOnUiThread {
+                    val menuItems = items.map { data ->
+                        val stockInfo = data["stockInfo"] as? Map<*, *>
 
-                for (doc in result.documents) {
-                    val active = doc.getBoolean("active") ?: true
-                    if (!active) continue
+                        val item = MenuItem(
+                            id = data["id"] as? String ?: "",
+                            name = data["name"] as? String ?: "Unknown",
+                            price = (data["price"] as? Number)?.toDouble() ?: 0.0,
+                            category = data["category"] as? String ?: "Other",
+                            isAvailable = stockInfo?.get("available") as? Boolean ?: true,
+                            servingsLeft = (stockInfo?.get("servingsLeft") as? Number)?.toInt() ?: 0,
+                            lowStock = stockInfo?.get("lowStock") as? Boolean ?: false
+                        )
+                        menuItemsById[item.id] = item
+                        item
+                    }
 
-                    val name = doc.getString("name") ?: continue
-                    val price = doc.getDouble("price") ?: 0.0
-                    val category = doc.getString("category") ?: "Other"
-                    val isAvailable = doc.getBoolean("isAvailable") ?: true
+                    val sorted = menuItems.sortedWith(compareBy<MenuItem> { it.category }.thenBy { it.name })
+                    val grouped = sorted.groupBy { it.category }
 
-                    val item = MenuItem(doc.id, name, price, category, isAvailable)
-                    items.add(item)
-                    menuItemsById[doc.id] = item
+                    allMenuRows.clear()
+                    for ((cat, list) in grouped) {
+                        allMenuRows.add(MenuRow.Header(cat))
+                        for (it in list) allMenuRows.add(MenuRow.Item(it))
+                    }
+
+                    if (expandedCategories.isEmpty()) {
+                        val firstHeader = allMenuRows.firstOrNull { it is MenuRow.Header } as? MenuRow.Header
+                        if (firstHeader != null) expandedCategories.add(firstHeader.title)
+                    }
+
+                    buildDisplayRows()
+                    buildCategoryChips(grouped.keys.toList())
                 }
-
-                val sorted = items.sortedWith(compareBy<MenuItem> { it.category }.thenBy { it.name })
-                val grouped = sorted.groupBy { it.category }
-
-                allMenuRows.clear()
-                for ((cat, list) in grouped) {
-                    allMenuRows.add(MenuRow.Header(cat))
-                    for (it in list) allMenuRows.add(MenuRow.Item(it))
+            },
+            onError = { e ->
+                runOnUiThread {
+                    Log.e("MenuActivity", "Failed to load menu", e)
+                    Toast.makeText(this, "Failed to load menu: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-
-                // Auto-expand first category so the screen isn't completely empty on load
-                if (expandedCategories.isEmpty()) {
-                    val firstHeader = allMenuRows.firstOrNull { it is MenuRow.Header } as? MenuRow.Header
-                    if (firstHeader != null) expandedCategories.add(firstHeader.title)
-                }
-
-                buildDisplayRows()
-                buildCategoryChips(grouped.keys.toList())
             }
-            .addOnFailureListener { e ->
-                Log.e("MenuActivity", "Failed to load menu", e)
-                Toast.makeText(this, "Failed to load menu: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        )
     }
 
     // ── Category chip navigation ───────────────────────────────────────────
@@ -230,7 +234,6 @@ class MenuActivity : AppCompatActivity() {
     }
 
     private fun scrollToCategory(category: String) {
-        // Expand the category first if it's collapsed — chip tap implies "I want to see this"
         if (category !in expandedCategories) {
             expandedCategories.add(category)
             buildDisplayRows()
@@ -283,30 +286,40 @@ class MenuActivity : AppCompatActivity() {
         updateOrderBar()
 
         val oid = orderId ?: return
-        val itemsRef = db.collection("orders").document(oid).collection("items")
-        itemsRef.whereEqualTo("menuItemId", item.id).limit(1).get()
-            .addOnSuccessListener { result ->
-                if (result.isEmpty) return@addOnSuccessListener
-                val docRef = result.documents[0].reference
-                if (newQty <= 0) docRef.delete() else docRef.update("qty", newQty.toLong())
-            }
-            .addOnFailureListener { e ->
-                Log.e("MenuActivity", "Failed to decrement item", e)
-            }
+
+        // Find the item in the order and update/delete via API
+        ApiClient.getOrderDetails(
+            orderId = oid,
+            onSuccess = { order ->
+                val items = order["items"] as? List<Map<String, Any>> ?: return@getOrderDetails
+                val orderItem = items.firstOrNull { it["menuItemId"] == item.id } ?: return@getOrderDetails
+                val itemId = orderItem["id"] as? String ?: return@getOrderDetails
+
+                if (newQty <= 0) {
+                    ApiClient.deleteOrderItem(oid, itemId, onSuccess = {}, onError = { e ->
+                        Log.e("MenuActivity", "Failed to remove item", e)
+                    })
+                } else {
+                    ApiClient.updateOrderItem(oid, itemId, newQty, onSuccess = {}, onError = { e ->
+                        Log.e("MenuActivity", "Failed to update item qty", e)
+                    })
+                }
+            },
+            onError = { e -> Log.e("MenuActivity", "Failed to fetch order for decrement", e) }
+        )
     }
 
     private fun refreshItemRow(menuItemId: String) {
-        // Search in displayRows — the filtered list the adapter actually uses
         val pos = displayRows.indexOfFirst { it is MenuRow.Item && it.item.id == menuItemId }
         if (pos >= 0) adapter.notifyItemChanged(pos)
     }
 
-    // ── Firestore order write ─────────────────────────────────────────────
+    // ── API order write ─────────────────────────────────────────────
 
     private fun addItemToOrder(menuItem: MenuItem) {
         val currentOrderId = orderId
         if (currentOrderId != null) {
-            addOrIncrementItem(currentOrderId, menuItem)
+            addItemViaApi(currentOrderId, menuItem)
             return
         }
 
@@ -315,60 +328,34 @@ class MenuActivity : AppCompatActivity() {
         val id = tableId ?: return
         isCreatingOrder = true
 
-        val counterRef = db.collection("counters").document("orders")
-
-        db.runTransaction { tx ->
-            val snap = tx.get(counterRef)
-            val next = (snap.getLong("count") ?: 0L) + 1L
-            tx.set(counterRef, mapOf("count" to next))
-            next
-        }.addOnSuccessListener { next ->
-            val newOrderId = "order_${next.toString().padStart(3, '0')}"
-            val order = hashMapOf(
-                "table" to id,
-                "status" to "open",
-                "createdAt" to FieldValue.serverTimestamp()
-            )
-            db.collection("orders").document(newOrderId).set(order)
-                .addOnSuccessListener {
-                    orderId = newOrderId
-                    isCreatingOrder = false
-                    addOrIncrementItem(newOrderId, menuItem)
-                }
-                .addOnFailureListener { e ->
-                    isCreatingOrder = false
+        ApiClient.createOrder(
+            tableName = id,
+            onSuccess = { newOrderId ->
+                orderId = newOrderId
+                isCreatingOrder = false
+                addItemViaApi(newOrderId, menuItem)
+            },
+            onError = { e ->
+                isCreatingOrder = false
+                runOnUiThread {
                     Toast.makeText(this, "Order create failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-        }.addOnFailureListener { e ->
-            isCreatingOrder = false
-            Toast.makeText(this, "Order create failed: ${e.message}", Toast.LENGTH_LONG).show()
-        }
+            }
+        )
     }
 
-    private fun addOrIncrementItem(orderId: String, menuItem: MenuItem) {
-        val itemsRef = db.collection("orders").document(orderId).collection("items")
-
-        itemsRef.get()
-            .addOnSuccessListener { allItems ->
-                val existing = allItems.documents.firstOrNull {
-                    it.getString("menuItemId") == menuItem.id
-                }
-                if (existing != null) {
-                    itemsRef.document(existing.id).update("qty", FieldValue.increment(1))
-                } else {
-                    val newItemId = "item_${(allItems.size() + 1).toString().padStart(3, '0')}"
-                    val item = hashMapOf(
-                        "menuItemId" to menuItem.id,
-                        "name" to menuItem.name,
-                        "unitPrice" to menuItem.price,
-                        "qty" to 1,
-                        "status" to "pending"
-                    )
-                    itemsRef.document(newItemId).set(item)
+    private fun addItemViaApi(orderId: String, menuItem: MenuItem) {
+        ApiClient.addOrderItem(
+            orderId = orderId,
+            menuItemId = menuItem.id,
+            name = menuItem.name,
+            unitPrice = menuItem.price,
+            onSuccess = { _ -> },
+            onError = { e ->
+                runOnUiThread {
+                    Toast.makeText(this, "Failed to add item: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to add item: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        )
     }
 }

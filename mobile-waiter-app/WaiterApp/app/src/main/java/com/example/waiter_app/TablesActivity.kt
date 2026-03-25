@@ -13,13 +13,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.waiter_app.services.ApiClient
 
 class TablesActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyText: TextView
-    private val db = FirebaseFirestore.getInstance()
     private val tablesList = mutableListOf<Table>()
     private lateinit var adapter: TablesAdapter
 
@@ -32,7 +31,6 @@ class TablesActivity : AppCompatActivity() {
 
         emptyText = findViewById(R.id.emptyText)
         recyclerView = findViewById(R.id.tablesRecycler)
-        // 2-column grid for scannable table cards
         recyclerView.layoutManager = GridLayoutManager(this, 2)
 
         adapter = TablesAdapter(tablesList)
@@ -41,7 +39,6 @@ class TablesActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh table status every time we return (e.g. from menu)
         loadTables()
     }
 
@@ -54,6 +51,7 @@ class TablesActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_logout -> {
                 FirebaseAuth.getInstance().signOut()
+                ApiClient.clearToken()
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
@@ -64,56 +62,63 @@ class TablesActivity : AppCompatActivity() {
     }
 
     private fun loadTables() {
-        db.collection("tables")
-            .whereEqualTo("active", true)
-            .get()
-            .addOnSuccessListener { tableResult ->
-                Log.d("TablesActivity", "Tables fetched: ${tableResult.size()}")
+        ApiClient.getTables(
+            onSuccess = { tables ->
+                runOnUiThread {
+                    Log.d("TablesActivity", "Tables fetched via API: ${tables.size}")
 
-                val tables = tableResult.documents.map { doc ->
-                    Table(id = doc.id, name = doc.getString("name") ?: doc.id)
-                }
+                    val parsedTables = tables.map { data ->
+                        Table(
+                            id = data["id"] as? String ?: "",
+                            name = data["name"] as? String ?: "Unknown",
+                            hasOpenOrder = false
+                        )
+                    }
 
-                // Query all open orders to mark which tables are active
-                db.collection("orders")
-                    .whereEqualTo("status", "open")
-                    .get()
-                    .addOnSuccessListener { ordersResult ->
-                        val tablesWithOpenOrders = ordersResult.documents
-                            .mapNotNull { it.getString("table") }
-                            .toSet()
+                    // Fetch open orders to mark which tables have active orders
+                    ApiClient.getOrders(
+                        status = "open",
+                        onSuccess = { orders ->
+                            runOnUiThread {
+                                val tablesWithOrders = orders
+                                    .mapNotNull { it["table"] as? String }
+                                    .toSet()
 
-                        tablesList.clear()
-                        tables.mapTo(tablesList) { table ->
-                            table.copy(hasOpenOrder = table.id in tablesWithOpenOrders)
+                                tablesList.clear()
+                                parsedTables.mapTo(tablesList) { table ->
+                                    table.copy(hasOpenOrder = table.id in tablesWithOrders)
+                                }
+
+                                tablesList.sortWith(compareBy(
+                                    { tableNumber(it.name) },
+                                    { it.name }
+                                ))
+
+                                adapter.notifyDataSetChanged()
+                                emptyText.visibility = if (tablesList.isEmpty()) View.VISIBLE else View.GONE
+                            }
+                        },
+                        onError = {
+                            runOnUiThread {
+                                tablesList.clear()
+                                tablesList.addAll(parsedTables.sortedWith(compareBy({ tableNumber(it.name) }, { it.name })))
+                                adapter.notifyDataSetChanged()
+                                emptyText.visibility = if (tablesList.isEmpty()) View.VISIBLE else View.GONE
+                            }
                         }
-                        // Sort by the trailing number in the name ("Table 10" → 10),
-                        // then alphabetically as fallback for non-numeric names.
-                        tablesList.sortWith(compareBy(
-                            { tableNumber(it.name) },
-                            { it.name }
-                        ))
-
-                        adapter.notifyDataSetChanged()
-                        emptyText.visibility = if (tablesList.isEmpty()) View.VISIBLE else View.GONE
-                    }
-                    .addOnFailureListener {
-                        // Orders query failed — show tables without status
-                        tablesList.clear()
-                        tablesList.addAll(tables.sortedWith(compareBy({ tableNumber(it.name) }, { it.name })))
-                        adapter.notifyDataSetChanged()
-                        emptyText.visibility = if (tablesList.isEmpty()) View.VISIBLE else View.GONE
-                    }
+                    )
+                }
+            },
+            onError = { e ->
+                runOnUiThread {
+                    Log.e("TablesActivity", "Failed to fetch tables from API", e)
+                    Toast.makeText(this, "API error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
-            .addOnFailureListener { e ->
-                Log.e("TablesActivity", "Failed to fetch tables", e)
-                Toast.makeText(this, "Failed to load tables: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        )
     }
 
     companion object {
-        /** Extracts the last run of digits from a name for natural numeric sorting.
-         *  "Table 10" → 10, "Table 2" → 2, "VIP" → Int.MAX_VALUE */
         private fun tableNumber(name: String): Int =
             Regex("""\d+""").findAll(name).lastOrNull()?.value?.toIntOrNull() ?: Int.MAX_VALUE
     }

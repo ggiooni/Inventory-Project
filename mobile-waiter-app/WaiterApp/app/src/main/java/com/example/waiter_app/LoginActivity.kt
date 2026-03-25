@@ -9,6 +9,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.example.waiter_app.services.ApiClient
 
 class LoginActivity : AppCompatActivity() {
 
@@ -51,10 +52,26 @@ class LoginActivity : AppCompatActivity() {
 
             setLoading(true)
 
+            // Step 1: Authenticate with Firebase
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
-                    setLoading(false)
-                    goToTables()
+                    // Step 2: Get JWT token from backend API
+                    ApiClient.login(
+                        email = email,
+                        password = password,
+                        onSuccess = { _ ->
+                            runOnUiThread {
+                                setLoading(false)
+                                goToTables()
+                            }
+                        },
+                        onError = { e ->
+                            runOnUiThread {
+                                setLoading(false)
+                                showError("API login failed: ${e.message}")
+                            }
+                        }
+                    )
                 }
                 .addOnFailureListener { e ->
                     setLoading(false)

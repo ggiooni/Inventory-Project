@@ -10,16 +10,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.waiter_app.services.FinalizeOrderService
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
+import com.example.waiter_app.services.ApiClient
 
 class OrderActivity : AppCompatActivity() {
 
-    private val db = FirebaseFirestore.getInstance()
     private val lines = mutableListOf<OrderLine>()
     private lateinit var adapter: OrderAdapter
     private lateinit var btnFinalizeOrder: MaterialButton
@@ -89,47 +85,63 @@ class OrderActivity : AppCompatActivity() {
 
     private fun incrementItem(line: OrderLine) {
         val oid = currentOrderId ?: return
-        db.collection("orders").document(oid).collection("items").document(line.itemId)
-            .update("qty", FieldValue.increment(1))
-            .addOnSuccessListener { loadOrder() }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "Update failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+        val newQty = (line.qty + 1).toInt()
+        ApiClient.updateOrderItem(oid, line.itemId, newQty,
+            onSuccess = { runOnUiThread { loadOrder() } },
+            onError = { e -> runOnUiThread { Toast.makeText(this, "Update failed: ${e.message}", Toast.LENGTH_SHORT).show() } }
+        )
     }
 
     private fun decrementItem(line: OrderLine) {
         val oid = currentOrderId ?: return
-        val itemRef = db.collection("orders").document(oid).collection("items").document(line.itemId)
         if (line.qty <= 1L) {
-            itemRef.delete()
-                .addOnSuccessListener { loadOrder() }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Remove failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            ApiClient.deleteOrderItem(oid, line.itemId,
+                onSuccess = { runOnUiThread { loadOrder() } },
+                onError = { e -> runOnUiThread { Toast.makeText(this, "Remove failed: ${e.message}", Toast.LENGTH_SHORT).show() } }
+            )
         } else {
-            itemRef.update("qty", FieldValue.increment(-1))
-                .addOnSuccessListener { loadOrder() }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Update failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            val newQty = (line.qty - 1).toInt()
+            ApiClient.updateOrderItem(oid, line.itemId, newQty,
+                onSuccess = { runOnUiThread { loadOrder() } },
+                onError = { e -> runOnUiThread { Toast.makeText(this, "Update failed: ${e.message}", Toast.LENGTH_SHORT).show() } }
+            )
         }
     }
 
     // ── Clear order ───────────────────────────────────────────────────────────
 
     private fun clearOrder(oid: String) {
-        val itemsRef = db.collection("orders").document(oid).collection("items")
-        itemsRef.get().addOnSuccessListener { items ->
-            val batch = db.batch()
-            items.documents.forEach { batch.delete(it.reference) }
-            batch.delete(db.collection("orders").document(oid))
-            batch.commit().addOnSuccessListener {
-                currentOrderId = null
-                navigateToTables()
-            }.addOnFailureListener { e ->
-                Toast.makeText(this, "Clear failed: ${e.message}", Toast.LENGTH_LONG).show()
+        // Delete each item then navigate away
+        ApiClient.getOrderDetails(oid,
+            onSuccess = { order ->
+                val items = order["items"] as? List<Map<String, Any>> ?: emptyList()
+                var remaining = items.size
+                if (remaining == 0) {
+                    runOnUiThread { navigateToTables() }
+                    return@getOrderDetails
+                }
+                for (item in items) {
+                    val itemId = item["id"] as? String ?: continue
+                    ApiClient.deleteOrderItem(oid, itemId,
+                        onSuccess = {
+                            remaining--
+                            if (remaining <= 0) {
+                                runOnUiThread {
+                                    currentOrderId = null
+                                    navigateToTables()
+                                }
+                            }
+                        },
+                        onError = { e ->
+                            runOnUiThread { Toast.makeText(this, "Clear failed: ${e.message}", Toast.LENGTH_LONG).show() }
+                        }
+                    )
+                }
+            },
+            onError = { e ->
+                runOnUiThread { Toast.makeText(this, "Clear failed: ${e.message}", Toast.LENGTH_LONG).show() }
             }
-        }
+        )
     }
 
     // ── Finalize ──────────────────────────────────────────────────────────────
@@ -137,29 +149,37 @@ class OrderActivity : AppCompatActivity() {
     private fun finalizeOrder(orderId: String) {
         setFinalizing(true)
 
-        FinalizeOrderService().finalizeOrder(
+        ApiClient.finalizeOrder(
             orderId = orderId,
-            onSuccess = { lowStock, insufficient ->
-                setFinalizing(false)
+            onSuccess = { warnings ->
+                runOnUiThread {
+                    setFinalizing(false)
 
-                val alerts = mutableListOf<String>()
-                insufficient.forEach { alerts.add("⚠ OUT OF STOCK: ${it.name} (needed ${it.requestedMl}ml, had ${it.availableMl}ml)") }
-                lowStock.forEach { alerts.add("Low stock: ${it.name} — ${it.openMl}ml remaining") }
+                    if (warnings.isNotEmpty()) {
+                        val msg = warnings.joinToString("\n\n") { warning ->
+                            val name = warning["name"] as? String ?: "Unknown"
+                            val openMl = (warning["openMl"] as? Number)?.toInt() ?: 0
+                            val stock = (warning["stock"] as? Number)?.toInt() ?: 0
+                            val message = warning["message"] as? String ?: "Low stock"
+                            "⚠ $name: $message (${openMl}ml left, $stock bottles)"
+                        }
 
-                if (alerts.isNotEmpty()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Stock Alerts")
-                        .setMessage(alerts.joinToString("\n\n"))
-                        .setPositiveButton("OK") { _, _ -> navigateToTables() }
-                        .show()
-                } else {
-                    navigateToTables()
+                        AlertDialog.Builder(this)
+                            .setTitle("Stock Alerts")
+                            .setMessage(msg)
+                            .setPositiveButton("OK") { _, _ -> navigateToTables() }
+                            .show()
+                    } else {
+                        navigateToTables()
+                    }
                 }
             },
             onError = { e ->
-                setFinalizing(false)
-                Log.e("OrderActivity", "Finalize failed", e)
-                Toast.makeText(this, errorMessage(e), Toast.LENGTH_LONG).show()
+                runOnUiThread {
+                    setFinalizing(false)
+                    Log.e("OrderActivity", "Finalize failed", e)
+                    Toast.makeText(this, "Finalize failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
         )
     }
@@ -182,58 +202,58 @@ class OrderActivity : AppCompatActivity() {
     private fun loadOrder() {
         val id = tableId ?: return
 
-        db.collection("orders")
-            .whereEqualTo("table", id)
-            .whereEqualTo("status", "open")
-            .limit(1)
-            .get()
-            .addOnSuccessListener { result ->
-                if (result.isEmpty) {
-                    lines.clear()
-                    adapter.notifyDataSetChanged()
-                    totalText.text = "Total: €0.00"
-                    currentOrderId = null
-                    showEmptyState(true)
-                    return@addOnSuccessListener
+        ApiClient.getOpenOrder(
+            tableId = id,
+            onSuccess = { orderId, _ ->
+                if (orderId == null) {
+                    runOnUiThread {
+                        lines.clear()
+                        adapter.notifyDataSetChanged()
+                        totalText.text = "Total: €0.00"
+                        currentOrderId = null
+                        showEmptyState(true)
+                    }
+                    return@getOpenOrder
                 }
 
-                val orderId = result.documents[0].id
                 currentOrderId = orderId
 
-                db.collection("orders").document(orderId)
-                    .collection("items")
-                    .get()
-                    .addOnSuccessListener { items ->
-                        lines.clear()
-                        var total = 0.0
+                ApiClient.getOrderDetails(
+                    orderId = orderId,
+                    onSuccess = { order ->
+                        runOnUiThread {
+                            lines.clear()
+                            val items = order["items"] as? List<Map<String, Any>> ?: emptyList()
 
-                        for (doc in items.documents) {
-                            val name = doc.getString("name") ?: "Item"
-                            val qty = doc.getLong("qty") ?: 1L
-                            val unitPrice = doc.getDouble("unitPrice") ?: 0.0
-                            val line = OrderLine(
-                                itemId = doc.id,
-                                name = name,
-                                qty = qty,
-                                unitPrice = unitPrice
-                            )
-                            lines.add(line)
-                            total += line.lineTotal
+                            for (item in items) {
+                                val itemId = item["id"] as? String ?: ""
+                                val name = item["name"] as? String ?: "Item"
+                                val qty = (item["qty"] as? Number)?.toLong() ?: 1L
+                                val unitPrice = (item["unitPrice"] as? Number)?.toDouble() ?: 0.0
+                                lines.add(OrderLine(itemId, name, qty, unitPrice))
+                            }
+
+                            adapter.notifyDataSetChanged()
+                            val total = (order["total"] as? Number)?.toDouble() ?: 0.0
+                            totalText.text = "Total: €${"%.2f".format(total)}"
+                            showEmptyState(lines.isEmpty())
                         }
-
-                        adapter.notifyDataSetChanged()
-                        totalText.text = "Total: €${"%.2f".format(total)}"
-                        showEmptyState(lines.isEmpty())
+                    },
+                    onError = { e ->
+                        runOnUiThread {
+                            Log.e("OrderActivity", "Failed to load order items", e)
+                            Toast.makeText(this, "Failed to load items: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
                     }
-                    .addOnFailureListener { e ->
-                        Log.e("OrderActivity", "Failed to load order items", e)
-                        Toast.makeText(this, "Failed to load items: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
+                )
+            },
+            onError = { e ->
+                runOnUiThread {
+                    Log.e("OrderActivity", "Failed to load order", e)
+                    Toast.makeText(this, "Failed to load order: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
-            .addOnFailureListener { e ->
-                Log.e("OrderActivity", "Failed to load order", e)
-                Toast.makeText(this, "Failed to load order: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        )
     }
 
     private fun showEmptyState(empty: Boolean) {
@@ -242,20 +262,5 @@ class OrderActivity : AppCompatActivity() {
         emptyOrderText.visibility = if (empty) View.VISIBLE else View.GONE
         btnFinalizeOrder.isEnabled = !empty
         btnClearOrder.isEnabled = !empty
-    }
-
-    private fun errorMessage(e: Exception): String = when {
-        e is FirebaseFirestoreException &&
-                e.code == FirebaseFirestoreException.Code.ABORTED ->
-            "Transaction conflict. Please try again."
-
-        e is FirebaseFirestoreException &&
-                e.code == FirebaseFirestoreException.Code.UNAVAILABLE ->
-            "Network error. Check your connection."
-
-        e.message?.contains("Order not found", ignoreCase = true) == true ->
-            "Order not found. It may have already been closed."
-
-        else -> "Finalize failed: ${e.message}"
     }
 }

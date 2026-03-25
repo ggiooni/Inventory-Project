@@ -5,5 +5,7 @@ data class MenuItem(
     val name: String,
     val price: Double,
     val category: String,
-    val isAvailable: Boolean = true   // safe default: assume available if field missing
+    val isAvailable: Boolean = true,
+    val servingsLeft: Int = 0,
+    val lowStock: Boolean = false
 )
