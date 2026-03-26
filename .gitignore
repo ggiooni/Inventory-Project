@@ -41,6 +41,7 @@ firebase-config.local.js
 *.pem
 *.key
 service-account*.json
+*-firebase-adminsdk-*.json
 credentials*.json
 CREDENTIALS*.txt
 google-services.json
