@@ -48,6 +48,13 @@ object ApiClient {
         authToken = null
     }
 
+    /**
+     * Check if we have a valid API token
+     */
+    fun hasToken(): Boolean {
+        return authToken != null
+    }
+
     // ─── Authentication ──────────────────────────────────────────
 
     /**

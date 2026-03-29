@@ -424,9 +424,12 @@ const finalizeOrder = asyncHandler(async (req, res) => {
         menuItemRecipes[menuItemId] = menuData.recipe;
     }
 
-    // ── Step 4: Aggregate total ml consumption per inventory item ───
+    // ── Step 4: Aggregate consumption per inventory item ────────────
+    // Supports two types:
+    //   - Pour-based (qtyMl): measured in ml, consumed from open bottle
+    //   - Whole-unit (consumeWhole): cans/bottles, decrement stock by 1
 
-    const consumptionMap = {}; // inventoryId -> { totalMlNeeded, name }
+    const consumptionMap = {}; // inventoryId -> { totalMlNeeded, totalUnitsNeeded, name }
 
     for (const [menuItemId, qty] of Object.entries(menuItemQty)) {
         const recipe = menuItemRecipes[menuItemId];
@@ -435,10 +438,20 @@ const finalizeOrder = asyncHandler(async (req, res) => {
             if (!consumptionMap[ingredient.inventoryId]) {
                 consumptionMap[ingredient.inventoryId] = {
                     totalMlNeeded: 0,
+                    totalUnitsNeeded: 0,
+                    consumeWhole: false,
                     name: ingredient.inventoryName || ingredient.inventoryId
                 };
             }
-            consumptionMap[ingredient.inventoryId].totalMlNeeded += ingredient.qtyMl * qty;
+
+            if (ingredient.consumeWhole) {
+                // Whole-unit: 1 unit per serving ordered
+                consumptionMap[ingredient.inventoryId].totalUnitsNeeded += qty;
+                consumptionMap[ingredient.inventoryId].consumeWhole = true;
+            } else {
+                // Pour-based: ml per serving
+                consumptionMap[ingredient.inventoryId].totalMlNeeded += (ingredient.qtyMl || 0) * qty;
+            }
         }
     }
 
@@ -477,41 +490,69 @@ const finalizeOrder = asyncHandler(async (req, res) => {
             let openMl = invData.openMl !== undefined ? invData.openMl : bottleSizeMl;
             const minOpenMlWarning = invData.minOpenMlWarning || BOTTLE_DEFAULTS.MIN_OPEN_ML_WARNING;
 
-            let remaining = consumption.totalMlNeeded;
+            if (consumption.consumeWhole) {
+                // ── Whole-unit deduction (cans, bottled beers, soft drinks) ──
+                // Each serving = 1 unit from stock, openMl is irrelevant
+                const needed = consumption.totalUnitsNeeded;
 
-            // Consume from the currently open bottle first
-            const fromOpen = Math.min(openMl, remaining);
-            openMl -= fromOpen;
-            remaining -= fromOpen;
-
-            // Open new bottles as needed
-            while (remaining > 0) {
-                if (stock <= 0) {
+                if (stock < needed) {
                     throw new ApiError(400,
                         `Insufficient inventory for "${consumption.name}". ` +
-                        `Need ${remaining}ml more but no bottles left.`
+                        `Need ${needed} units but only ${stock} left.`
                     );
                 }
 
-                stock -= 1;
-                openMl = bottleSizeMl;
+                stock -= needed;
 
-                const used = Math.min(openMl, remaining);
-                openMl -= used;
-                remaining -= used;
-            }
+                if (stock <= (invData.alertThreshold || 2)) {
+                    warnings.push({
+                        inventoryId,
+                        name: consumption.name,
+                        openMl,
+                        stock,
+                        message: stock === 0
+                            ? 'URGENT: Out of stock!'
+                            : `Low stock: ${stock} units remaining`
+                    });
+                }
+            } else {
+                // ── Pour-based deduction (spirits, wines, syrups, kegs) ──
+                let remaining = consumption.totalMlNeeded;
 
-            // Check for low stock warnings
-            if (openMl <= minOpenMlWarning) {
-                warnings.push({
-                    inventoryId,
-                    name: consumption.name,
-                    openMl,
-                    stock,
-                    message: stock === 0 && openMl <= minOpenMlWarning
-                        ? 'URGENT: Last bottle running low!'
-                        : 'Low open bottle — consider restocking'
-                });
+                // Consume from the currently open bottle first
+                const fromOpen = Math.min(openMl, remaining);
+                openMl -= fromOpen;
+                remaining -= fromOpen;
+
+                // Open new bottles as needed
+                while (remaining > 0) {
+                    if (stock <= 0) {
+                        throw new ApiError(400,
+                            `Insufficient inventory for "${consumption.name}". ` +
+                            `Need ${remaining}ml more but no bottles left.`
+                        );
+                    }
+
+                    stock -= 1;
+                    openMl = bottleSizeMl;
+
+                    const used = Math.min(openMl, remaining);
+                    openMl -= used;
+                    remaining -= used;
+                }
+
+                // Check for low stock warnings
+                if (openMl <= minOpenMlWarning) {
+                    warnings.push({
+                        inventoryId,
+                        name: consumption.name,
+                        openMl,
+                        stock,
+                        message: stock === 0 && openMl <= minOpenMlWarning
+                            ? 'URGENT: Last bottle running low!'
+                            : 'Low open bottle — consider restocking'
+                    });
+                }
             }
 
             // Queue the update
@@ -520,7 +561,9 @@ const finalizeOrder = asyncHandler(async (req, res) => {
                 name: consumption.name,
                 newStock: stock,
                 newOpenMl: openMl,
-                consumed: consumption.totalMlNeeded
+                consumed: consumption.consumeWhole
+                    ? `${consumption.totalUnitsNeeded} units`
+                    : `${consumption.totalMlNeeded}ml`
             });
 
             // Write inventory update within the transaction

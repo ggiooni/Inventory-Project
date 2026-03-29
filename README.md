@@ -1,9 +1,9 @@
 # Smart Inventory Management System
 
 > **BSc Computer Science - Final Year Project**
-> Dorset College Dublin, Ireland | 2025
+> Dorset College Dublin, Ireland | 2025–2026
 
-An AI-powered inventory management system for the hospitality industry with real-time tracking, smart alerts, and POS integration.
+An AI-powered inventory management system for the hospitality industry with real-time tracking, smart alerts, POS integration, and a mobile waiter app that connects via REST API.
 
 ---
 
@@ -11,10 +11,10 @@ An AI-powered inventory management system for the hospitality industry with real
 
 ```
 inventory-project/
-├── frontend/          # Web Application (HTML, CSS, JavaScript)
+├── frontend/          # Web Dashboard (HTML, CSS, JavaScript)
 ├── backend/           # REST API (Node.js + Express)
-├── mobile-waiter-app/ # Mobile App (Native Android / Kotlin)
-└── docs/              # Documentation
+├── mobile-waiter-app/ # WaiterApp — Android POS (Kotlin)
+└── docs/              # Architecture, API docs, deployment guide
 ```
 
 ---
@@ -25,7 +25,6 @@ inventory-project/
 |------|------|--------|
 | Nicolas Boggioni Troncoso | Full Stack Developer | [@GGiooni](https://github.com/GGiooni) |
 | Fernando Moraes | Mobile Developer | [@nando-moraes](https://github.com/nando-moraes) |
-| Geison Herrar | Collaborator | |
 
 ---
 
@@ -34,161 +33,162 @@ inventory-project/
 - Node.js 22+ (LTS)
 - npm 10+
 - Firebase project configured
+- Android Studio (for WaiterApp)
 
 ## Quick Start
 
-### Frontend (Web App)
-
-```bash
-cd frontend
-npm install
-npx serve .
-# Open http://localhost:3000
-```
-
-### Backend (API)
+### Backend (API) — start first
 
 ```bash
 cd backend
 npm install
-cp .env.example .env
-# Edit .env with your configuration
-npm run dev
-# API running at http://localhost:5000
+cp .env.example .env    # Edit with your Firebase credentials
+npm run dev             # API at http://localhost:5000
 ```
 
-### Mobile Waiter App (Android)
+### Frontend (Web Dashboard)
 
 ```bash
-cd mobile-waiter-app/WaiterApp
-./gradlew assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
+cd frontend
+npm install
+npx serve . -p 3001    # Dashboard at http://localhost:3001
 ```
 
-See [mobile-waiter-app/README.md](./mobile-waiter-app/README.md) for full setup and feature details.
+### WaiterApp (Android POS)
+
+1. Open `mobile-waiter-app/WaiterApp` in Android Studio
+2. Ensure `google-services.json` is in `app/` (download from Firebase Console)
+3. Run on emulator (uses `10.0.2.2:5000` to reach the backend)
+
+### Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@inventory.com` | `admin123.` |
+| Manager | `manager@inventory.com` | `manager123.` |
+| Staff | `staff@inventory.com` | `staff123.` |
+
+### Seed Data
+
+```bash
+cd backend
+node scripts/seed-fresh.js   # Fresh bar dataset (inventory, menu, tables, recipes)
+```
 
 ---
 
 ## Technology Stack
 
-### Frontend
-- HTML5, CSS3, JavaScript (ES6+)
-- Firebase SDK (Authentication, Firestore)
-- Vitest (Testing)
-
-### Backend
-- Node.js + Express
-- Firebase Admin SDK
-- JWT Authentication
-- Groq API (AI/LLM)
-- Jest (Testing)
-
-### Mobile (Waiter App)
-- Native Android (Kotlin) — Material 3 dark theme
-- Firebase Authentication + Firestore (direct SDK, no backend)
-- RecyclerView with multi-view-type adapter
-- Android JUnit (Testing)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML5, CSS3, JavaScript (ES6+), Firebase SDK |
+| Backend | Node.js, Express, Firebase Admin SDK, JWT |
+| Database | Firebase Firestore |
+| AI | Groq API (Llama 3.3) |
+| Mobile | Native Android (Kotlin), OkHttp, Gson |
+| Testing | Vitest (frontend), Jest (backend) |
+| CI/CD | GitHub Actions |
 
 ---
 
 ## Features
 
-- **Real-time Inventory Tracking** - Live updates via Firebase
-- **Smart Alerts** - Priority-based stock warnings
-- **AI Assistant** - Natural language queries (Groq/Llama 3.3)
-- **POS Integration** - Toast, Square, Clover, Lightspeed
-- **Role-based Access** - Admin, Manager, Staff permissions
-- **Dark Mode** - User preference saved locally
-- **Mobile Responsive** - Works on all devices
-- **Waiter Mobile App** - Native Android POS with Material 3 dark theme; collapsible menu categories, optimistic qty controls, automatic inventory deduction on finalize
+- **Real-time Inventory Tracking** — Live updates via Firestore, 5-second polling fallback
+- **Smart Alerts** — Priority-based stock warnings with notifications
+- **AI Assistant** — Natural language queries powered by Groq/Llama 3.3
+- **WaiterApp POS** — Mobile ordering app connected via REST API
+- **Order Finalization** — Automatic inventory deduction with bottle-level tracking (openMl/stock)
+- **Stock Indicators** — Menu items show servingsLeft on the POS
+- **Recipe Management** — Cocktail recipes linked to inventory items
+- **Role-based Access** — Admin, Manager, Staff permissions
+- **POS Dashboard** — Live view of tables, open orders, and recent sales
+- **Dark Mode** — User preference saved locally
 
 ---
 
-## API Documentation
+## API Endpoints
 
-See [backend/README.md](./backend/README.md) for full API documentation.
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Login (returns JWT) |
+| POST | `/api/auth/register` | Register new user |
 
-### Quick Reference
+### Inventory
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/inventory` | List all items |
+| POST | `/api/inventory` | Create item |
+| PATCH | `/api/inventory/:id/stock` | Update stock |
+| GET | `/api/alerts` | Low stock alerts |
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/auth/login` | User authentication |
-| `GET /api/inventory` | Get all inventory items |
-| `PATCH /api/inventory/:id/stock` | Update stock level |
-| `GET /api/alerts` | Get stock alerts |
-| `POST /api/ai/chat` | Chat with AI assistant |
+### POS Integration (WaiterApp)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tables` | List tables |
+| GET | `/api/menu-items` | Menu with stock indicators |
+| POST | `/api/orders` | Create order |
+| POST | `/api/orders/:id/items` | Add item (auto-increment) |
+| POST | `/api/orders/:id/finalize` | **Close order + deduct inventory** |
+
+### Other
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | `/api/recipes` | Recipe management |
+| POST | `/api/ai/chat` | AI assistant |
+
+Full API documentation: [docs/API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENTS                                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
-│  │  Web App    │  │ Mobile App  │  │   Third-party Apps      │ │
-│  │  (Frontend) │  │  (Mobile)   │  │   (Future)              │ │
-│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘ │
-└─────────┼────────────────┼──────────────────────┼───────────────┘
-          │                │                      │
-          └────────────────┼──────────────────────┘
-                           │
-                    REST API / HTTPS
-                           │
-┌──────────────────────────┼──────────────────────────────────────┐
-│                          ▼                                       │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                 BACKEND (Node.js + Express)                  ││
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐││
-│  │  │   Auth   │ │Inventory │ │  Alerts  │ │   AI Service     │││
-│  │  │Controller│ │Controller│ │Controller│ │   Controller     │││
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│  ┌───────────────────────────┼───────────────────────────────┐  │
-│  │                           ▼                               │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐   │  │
-│  │  │  Firebase   │  │  Firebase   │  │    Groq API     │   │  │
-│  │  │   Auth      │  │  Firestore  │  │    (AI/LLM)     │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────────┘   │  │
-│  │                    DATABASE LAYER                         │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                         SERVER                                   │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                        CLIENTS                            │
+│  ┌─────────────┐  ┌──────────────┐                       │
+│  │  Web App    │  │  WaiterApp   │                       │
+│  │  (Frontend) │  │  (Android)   │                       │
+│  └──────┬──────┘  └──────┬───────┘                       │
+└─────────┼────────────────┼────────────────────────────────┘
+          │                │
+          │          REST API (HTTP)
+          │                │
+┌─────────┼────────────────┼────────────────────────────────┐
+│         ▼                ▼                                 │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │           BACKEND (Node.js + Express)                │  │
+│  │                                                      │  │
+│  │  Auth · Inventory · Alerts · AI · Recipes            │  │
+│  │  Tables · MenuItems · Orders (+ Finalize)            │  │
+│  └──────────────────────┬──────────────────────────────┘  │
+│                          │                                 │
+│  ┌───────────────┐ ┌────┴──────┐ ┌─────────────────────┐ │
+│  │ Firebase Auth │ │ Firestore │ │  Groq API (AI/LLM)  │ │
+│  └───────────────┘ └───────────┘ └─────────────────────┘ │
+│                       SERVER                               │
+└────────────────────────────────────────────────────────────┘
 ```
+
+### Order Finalization Flow
+When a waiter finalizes an order in the WaiterApp:
+1. Backend reads all order items and their recipes
+2. Aggregates total ml/units needed per inventory item
+3. Consumes from open bottle (openMl) first, opens new bottles if needed
+4. All writes are atomic via Firestore transaction
+5. Returns stock warnings to the waiter if inventory is low
+6. Web dashboard updates automatically within 5 seconds
 
 ---
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment.
-
-### CI Pipeline (`ci.yml`)
-- **Change detection** - Only runs jobs for modified services (backend/frontend)
-- **Lint + Test in parallel** - ESLint and test suites run concurrently per service
-- **Coverage reports** - Uploaded as artifacts on every run
-- **Security audit** - Dependency vulnerability scanning
-- **Gate job** - All checks must pass before merge
-
-### CD Pipeline (`deploy.yml`)
-- **Staging** - Auto-deploys to Firebase after CI passes on `main`
-- **Production** - Requires manual approval via GitHub environment protection rules
-- Deploys Firestore rules + Firebase Hosting
-
-### Running Tests Locally
+GitHub Actions pipelines with change detection — only runs jobs for modified services.
 
 ```bash
-# Backend
+# Run tests locally
 cd backend && npm test
-
-# Frontend
 cd frontend && npm test
-
-# With coverage
-npm run test:coverage
-
-# Mobile (JVM unit tests, no emulator needed)
-cd mobile-waiter-app/WaiterApp && ./gradlew test
 ```
 
 ---
@@ -205,6 +205,6 @@ For academic use only.
 **Smart Inventory**
 *AI-Powered Management for Smarter Operations*
 
-BSc Computer Science - Final Year Project | 2025
+BSc Computer Science - Final Year Project | 2025–2026
 
 </div>

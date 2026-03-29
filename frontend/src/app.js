@@ -37,6 +37,9 @@ import {
     SUCCESS_MESSAGES
 } from './config/constants.js';
 
+// Firebase (for POS Dashboard direct queries)
+import { db } from './config/firebase.js';
+
 // Authentication Module
 import {
     initAuth,
@@ -181,11 +184,18 @@ async function handleAuthSuccess(authData) {
             generateAlerts();
             updateStatsDisplay();
             renderInventoryTable();
+            checkForNewAlerts();
         },
         (_error) => showNotification('Connection error', 'error')
     );
 
+    // Polling fallback: refresh inventory every 15 seconds
+    // Ensures updates from WaiterApp orders are reflected even if
+    // Firestore onSnapshot misses them
+    startInventoryPolling();
+
     await loadPOSConfig();
+    refreshPOSDashboard();
     await loadRecipes();
     renderRecipesPanel();
 
@@ -686,6 +696,13 @@ window.attemptLogin = async function() {
 
 window.logout = async function() {
     if (confirm('Are you sure you want to sign out?')) {
+        // Stop polling on logout
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        previousAlertItems = new Set();
+
         const result = await authLogout();
         if (result.success) {
             showNotification(result.message, 'success');
@@ -1969,6 +1986,201 @@ window.getAIInsightsAction = async function() {
 
     await window.askAI('Provide a comprehensive analysis of my current inventory status.');
 };
+
+// =============================================
+// =============================================
+// POS DASHBOARD (WaiterApp real-time data)
+// =============================================
+
+const API_BASE = 'http://localhost:5000/api';
+
+async function getAPIToken() {
+    // Reuse the current user's Firebase ID token to authenticate with backend
+    const { auth } = await import('./config/firebase.js');
+    const { getIdToken } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    if (auth.currentUser) {
+        return await getIdToken(auth.currentUser);
+    }
+    return null;
+}
+
+async function apiGet(path) {
+    // Try with stored JWT from localStorage first, fallback to Firebase ID token
+    let token = localStorage.getItem('api_jwt_token');
+
+    if (!token) {
+        // Login to backend to get JWT (using stored credentials would be needed)
+        // For now, try Firebase ID token approach via the backend
+        token = await getAPIToken();
+    }
+
+    const res = await fetch(`${API_BASE}${path}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+    return await res.json();
+}
+
+/**
+ * Refresh the POS Dashboard with real data from the backend API
+ */
+window.refreshPOSDashboard = async function refreshPOSDashboard() {
+    try {
+        // Check API health
+        const health = await fetch(`${API_BASE}/health`).then(r => r.json()).catch(() => null);
+        const statusEl = document.getElementById('toastStatus');
+
+        if (health) {
+            statusEl.textContent = 'Connected';
+            statusEl.className = 'status-badge connected';
+        } else {
+            statusEl.textContent = 'Offline';
+            statusEl.className = 'status-badge disconnected';
+            return;
+        }
+
+        // Fetch data from Firestore directly (we have access via Firebase SDK)
+        const { collection: fbCollection, getDocs: fbGetDocs, query: fbQuery, where: fbWhere, orderBy: fbOrderBy, limit: fbLimit }
+            = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+        // Menu items count
+        const menuSnap = await fbGetDocs(fbQuery(fbCollection(db, 'menuItems'), fbWhere('active', '==', true)));
+        document.getElementById('mappedItems').textContent = menuSnap.size;
+
+        // Open orders count
+        const openOrdersSnap = await fbGetDocs(fbQuery(fbCollection(db, 'orders'), fbWhere('status', '==', 'open')));
+        document.getElementById('autoUpdates').textContent = openOrdersSnap.size;
+
+        // Tables grid
+        const tablesSnap = await fbGetDocs(fbQuery(fbCollection(db, 'tables'), fbWhere('active', '==', true)));
+        const openOrderTables = new Set();
+        openOrdersSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.table) openOrderTables.add(data.table);
+        });
+
+        const tablesGrid = document.getElementById('posTablesGrid');
+        if (tablesSnap.empty) {
+            tablesGrid.innerHTML = '<p class="empty-state">No tables configured</p>';
+        } else {
+            const tables = [];
+            tablesSnap.forEach(doc => tables.push({ id: doc.id, ...doc.data() }));
+            tables.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+            tablesGrid.innerHTML = tables.map(t => {
+                const hasOrder = openOrderTables.has(t.id) || openOrderTables.has(t.name);
+                return `
+                    <div class="pos-table-card ${hasOrder ? 'has-order' : ''}">
+                        <div class="table-name">${t.name}</div>
+                        <div class="table-status ${hasOrder ? 'active' : ''}">${hasOrder ? 'Order Active' : 'Available'}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        // Recent closed orders
+        const allOrdersSnap = await fbGetDocs(fbQuery(fbCollection(db, 'orders'), fbWhere('status', '==', 'closed')));
+        const closedOrders = [];
+        allOrdersSnap.forEach(doc => closedOrders.push({ id: doc.id, ...doc.data() }));
+        closedOrders.sort((a, b) => (b.closedAt || '').localeCompare(a.closedAt || ''));
+        const recent = closedOrders.slice(0, 10);
+
+        const recentEl = document.getElementById('posRecentOrders');
+        if (recent.length === 0) {
+            recentEl.innerHTML = '<p class="empty-state">No orders finalized yet</p>';
+        } else {
+            // Fetch items for each order to calculate totals
+            const orderRows = [];
+            for (const order of recent) {
+                const itemsSnap = await fbGetDocs(fbCollection(db, `orders/${order.id}/items`));
+                let total = 0;
+                let itemCount = 0;
+                itemsSnap.forEach(doc => {
+                    const d = doc.data();
+                    total += (d.unitPrice || 0) * (d.qty || 0);
+                    itemCount += d.qty || 0;
+                });
+
+                const time = order.closedAt ? new Date(order.closedAt).toLocaleString('en-IE', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                }) : 'Unknown';
+
+                orderRows.push(`
+                    <div class="pos-order-row">
+                        <div class="pos-order-info">
+                            <span class="pos-order-table">${order.table || 'Unknown'}</span>
+                            <span class="pos-order-time">${time}</span>
+                        </div>
+                        <div>
+                            <div class="pos-order-total">&euro;${total.toFixed(2)}</div>
+                            <div class="pos-order-items">${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
+                        </div>
+                    </div>`);
+            }
+            recentEl.innerHTML = orderRows.join('');
+        }
+
+    } catch (error) {
+        console.error('POS Dashboard refresh error:', error);
+    }
+}
+
+// =============================================
+// INVENTORY POLLING & LIVE ALERTS
+// =============================================
+
+let pollingInterval = null;
+let previousAlertItems = new Set();
+
+/**
+ * Poll inventory data every 15 seconds as a fallback for real-time updates.
+ * This ensures changes from the WaiterApp (order finalization) are reflected
+ * in the dashboard even if Firestore onSnapshot doesn't fire.
+ */
+function startInventoryPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    pollingInterval = setInterval(async () => {
+        const user = getCurrentUser();
+        if (!user) {
+            clearInterval(pollingInterval);
+            return;
+        }
+
+        await loadInventoryData();
+        generateAlerts();
+        updateStatsDisplay();
+        renderInventoryTable();
+        checkForNewAlerts();
+        refreshPOSDashboard();
+    }, 5000);
+}
+
+/**
+ * Compare current alerts with previous state and notify if new low-stock items appear.
+ */
+function checkForNewAlerts() {
+    const alerts = getDisplayAlerts();
+    const currentAlertItems = new Set(alerts.map(a => a.product.id));
+
+    // Find new alerts (items that weren't in alert state before)
+    const newAlerts = alerts.filter(a => !previousAlertItems.has(a.product.id));
+
+    if (newAlerts.length > 0 && previousAlertItems.size > 0) {
+        // Only notify after initial load (not on first render)
+        const urgentNew = newAlerts.filter(a => a.status === 'urgent');
+        const normalNew = newAlerts.filter(a => a.status !== 'urgent');
+
+        if (urgentNew.length > 0) {
+            const names = urgentNew.map(a => a.product.name).slice(0, 3).join(', ');
+            const extra = urgentNew.length > 3 ? ` +${urgentNew.length - 3} more` : '';
+            showNotification(`URGENT: ${names}${extra} critically low!`, 'error');
+        }
+        if (normalNew.length > 0) {
+            showNotification(`${normalNew.length} new low stock alert(s)`, 'warning');
+        }
+    }
+
+    previousAlertItems = currentAlertItems;
+}
 
 // =============================================
 // APPLICATION STARTUP

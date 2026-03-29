@@ -27,10 +27,10 @@ class LoginActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // already logged in -> go next
-        if (auth.currentUser != null) {
-            goToTables()
-            return
+        // If already logged in to Firebase but no API token, force re-login
+        // (API token is lost when app restarts since it's only in memory)
+        if (auth.currentUser != null && !ApiClient.hasToken()) {
+            auth.signOut()
         }
 
         emailInput = findViewById(R.id.emailInput)

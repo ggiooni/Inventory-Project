@@ -64,17 +64,45 @@ npm run dev
 | POST | `/api/ai/shopping-list` | AI shopping list | Private |
 | POST | `/api/ai/insights` | Get insights | Private |
 
-### POS Integration
+### POS Integration (Legacy)
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | GET | `/api/pos/config` | Get POS config | Private |
 | POST | `/api/pos/config` | Save POS config | Manager/Admin |
 | DELETE | `/api/pos/config` | Disconnect POS | Manager/Admin |
-| POST | `/api/pos/sync` | Sync with POS | Private |
-| GET | `/api/pos/menu-items` | Get menu items | Private |
-| GET | `/api/pos/mappings` | Get mappings | Private |
-| POST | `/api/pos/mappings` | Save mappings | Manager/Admin |
+
+### Tables (WaiterApp)
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | `/api/tables` | List tables (?active=true) | Private |
+| GET | `/api/tables/:id` | Get single table | Private |
+| POST | `/api/tables` | Create table | Manager/Admin |
+| PUT | `/api/tables/:id` | Update table | Manager/Admin |
+| DELETE | `/api/tables/:id` | Delete table | Manager/Admin |
+
+### Menu Items (WaiterApp)
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | `/api/menu-items` | List items with stock indicators | Private |
+| GET | `/api/menu-items/:id` | Get item with stock info | Private |
+| POST | `/api/menu-items` | Create item (recipe mandatory) | Admin |
+| PUT | `/api/menu-items/:id` | Update item | Admin |
+| DELETE | `/api/menu-items/:id` | Delete item | Admin |
+
+### Orders (WaiterApp)
+
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | `/api/orders` | List orders (?table=X&status=open) | Private |
+| GET | `/api/orders/:id` | Get order with items & total | Private |
+| POST | `/api/orders` | Create order for table | Private |
+| POST | `/api/orders/:id/items` | Add item (auto-increment qty) | Private |
+| PUT | `/api/orders/:id/items/:itemId` | Update item qty/status | Private |
+| DELETE | `/api/orders/:id/items/:itemId` | Remove item | Private |
+| POST | `/api/orders/:id/finalize` | **Close order + deduct inventory** | Private |
 
 ### Recipes
 
@@ -123,18 +151,18 @@ backend/
 │   │   ├── alerts.controller.js
 │   │   ├── ai.controller.js
 │   │   ├── pos.controller.js
-│   │   └── recipes.controller.js
+│   │   ├── recipes.controller.js
+│   │   ├── tables.controller.js      # WaiterApp POS
+│   │   ├── menuItems.controller.js   # WaiterApp POS
+│   │   └── orders.controller.js      # WaiterApp POS (+ finalize)
 │   ├── middleware/      # Express middleware
 │   │   ├── auth.js      # JWT verification
 │   │   └── errorHandler.js
-│   ├── routes/          # API routes
-│   │   ├── auth.routes.js
-│   │   ├── inventory.routes.js
-│   │   ├── alerts.routes.js
-│   │   ├── ai.routes.js
-│   │   ├── pos.routes.js
-│   │   └── recipes.routes.js
+│   ├── routes/          # API routes (1 file per resource)
 │   └── server.js        # Entry point
+├── scripts/
+│   ├── seed-fresh.js              # Fresh bar dataset
+│   └── migrate-inventory-fields.js # Field migration tool
 ├── .env.example         # Environment template
 ├── package.json
 └── README.md

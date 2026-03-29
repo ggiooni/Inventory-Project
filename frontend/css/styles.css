@@ -1085,6 +1085,90 @@ h1, h2, h3, .panel-title, .login-title, .page-title, .modal-title, .confirm-titl
     margin: 10px 0;
 }
 
+/* POS Dashboard — Tables Grid */
+.pos-tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.pos-table-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    transition: all var(--transition-fast);
+}
+
+.pos-table-card.has-order {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.pos-table-card .table-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+}
+
+.pos-table-card .table-status {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.pos-table-card .table-status.active {
+    color: var(--primary);
+    opacity: 1;
+    font-weight: 500;
+}
+
+/* POS Dashboard — Recent Orders */
+.pos-order-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background var(--transition-fast);
+}
+
+.pos-order-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.pos-order-row:last-child {
+    border-bottom: none;
+}
+
+.pos-order-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pos-order-table {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.pos-order-time {
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.pos-order-total {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--success);
+}
+
+.pos-order-items {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    text-align: right;
+}
+
 .last-sync {
     font-size: 0.78rem;
     opacity: 0.6;

@@ -238,34 +238,71 @@
 
                 <!-- ========== POS VIEW ========== -->
                 <div class="view" id="view-pos">
+                    <!-- WaiterApp Status -->
                     <section class="panel pos-panel" id="posIntegrationPanel">
                         <div class="panel-header" onclick="togglePanel('posIntegrationPanel')">
                             <div class="panel-header-left">
                                 <span class="panel-icon">&#128268;</span>
-                                <span class="panel-title">POS Integration Status</span>
+                                <span class="panel-title">WaiterApp POS Dashboard</span>
                             </div>
                             <div class="panel-header-right">
-                                <button class="btn btn-small" onclick="event.stopPropagation(); configurePOS()">Configure</button>
+                                <button class="btn btn-small" onclick="event.stopPropagation(); refreshPOSDashboard()">Refresh</button>
                                 <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
                             </div>
                         </div>
                         <div class="panel-content">
                             <div class="pos-stats">
                                 <div class="pos-stat-card">
-                                    <h3>POS System</h3>
-                                    <p class="status-badge" id="toastStatus">Not Connected</p>
-                                    <p class="last-sync">Last Sync: <span id="lastSync">Never</span></p>
+                                    <h3>API Status</h3>
+                                    <p class="status-badge" id="toastStatus">Checking...</p>
+                                    <p class="last-sync">Backend: <span id="lastSync">localhost:5000</span></p>
                                 </div>
                                 <div class="pos-stat-card">
-                                    <h3>Items Mapped</h3>
+                                    <h3>Menu Items</h3>
                                     <p class="stat-number" id="mappedItems">0</p>
-                                    <button class="btn-small" onclick="openItemMapping()">Map Items</button>
+                                    <p class="stat-label">Active on POS</p>
                                 </div>
                                 <div class="pos-stat-card">
-                                    <h3>Auto-Updates</h3>
+                                    <h3>Open Orders</h3>
                                     <p class="stat-number" id="autoUpdates">0</p>
-                                    <p class="stat-label">Today</p>
+                                    <p class="stat-label">Right now</p>
                                 </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Active Tables -->
+                    <section class="panel" id="posTablesPanel">
+                        <div class="panel-header" onclick="togglePanel('posTablesPanel')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#127869;</span>
+                                <span class="panel-title">Tables & Active Orders</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div id="posTablesGrid" class="pos-tables-grid">
+                                <p class="empty-state">Loading tables...</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recent Closed Orders -->
+                    <section class="panel" id="posRecentOrdersPanel">
+                        <div class="panel-header" onclick="togglePanel('posRecentOrdersPanel')">
+                            <div class="panel-header-left">
+                                <span class="panel-icon">&#128196;</span>
+                                <span class="panel-title">Recent Orders</span>
+                            </div>
+                            <div class="panel-header-right">
+                                <button class="panel-collapse-btn" aria-label="Collapse panel">&#9660;</button>
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div id="posRecentOrders">
+                                <p class="empty-state">Loading orders...</p>
                             </div>
                         </div>
                     </section>

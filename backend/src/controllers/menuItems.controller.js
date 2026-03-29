@@ -53,9 +53,19 @@ function calculateStockInfo(recipe, inventoryMap) {
         const openMl = invItem.openMl !== undefined ? invItem.openMl : bottleSizeMl;
         const alertThreshold = invItem.alertThreshold || 2;
 
-        // Total ml available = open bottle + closed bottles
-        const totalMl = openMl + (stock * bottleSizeMl);
-        const servings = Math.floor(totalMl / ingredient.qtyMl);
+        let servings;
+
+        if (ingredient.consumeWhole) {
+            // Whole-unit items (cans, bottled beers, soft drinks)
+            // Each serving = 1 unit from stock, openMl is irrelevant
+            servings = stock;
+        } else {
+            // Pour-based items (spirits, wines, syrups, kegs)
+            // Total ml available = open bottle + closed bottles
+            const totalMl = openMl + (stock * bottleSizeMl);
+            servings = Math.floor(totalMl / (ingredient.qtyMl || 1));
+        }
+
         minServings = Math.min(minServings, servings);
 
         // Check if this ingredient is running low
