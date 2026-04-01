@@ -67,6 +67,7 @@ npx serve . -p 3001    # Dashboard at http://localhost:3001
 | Admin | `admin@inventory.com` | `admin123.` |
 | Manager | `manager@inventory.com` | `manager123.` |
 | Staff | `staff@inventory.com` | `staff123.` |
+| Test | `test@inventory.com` | `test123.` |
 
 ### Seed Data
 
